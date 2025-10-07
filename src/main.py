@@ -25,7 +25,6 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Desarrollo local
         "https://*.vercel.app",   # Vercel (profesional)
-        "https://*.netlify.app",  # Netlify (alternativa)
         "https://*.up.railway.app" # Railway (backend)
     ],
     allow_credentials=True,
