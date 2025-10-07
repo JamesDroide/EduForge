@@ -1,11 +1,11 @@
 // Configuración de API para diferentes entornos
 const getApiUrl = () => {
   // En producción, usar la variable de entorno
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.REACT_APP_API_URL || 'https://your-backend-app-name.herokuapp.com';
+  if (process.env.NODE_ENV === "production") {
+    return process.env.REACT_APP_API_URL || "https://your-backend-app-name.herokuapp.com";
   }
   // En desarrollo, usar localhost
-  return 'http://localhost:8000';
+  return "http://localhost:8000";
 };
 
 export const API_BASE_URL = getApiUrl();
