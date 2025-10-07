@@ -1,9 +1,11 @@
 # src/config.py
+import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import OperationalError
 
-DATABASE_URL = "postgresql://postgres:jamesdroide@localhost:5432/eduforge"  # Contraseña actualizada
+# Leer la URL de la base de datos desde la variable de entorno, o usar la local por defecto
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:jamesdroide@localhost:5432/eduforge")
 
 # Crear el engine de SQLAlchemy para conectar con PostgreSQL
 engine = create_engine(DATABASE_URL)
