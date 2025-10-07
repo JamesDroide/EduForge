@@ -214,7 +214,9 @@ function Billing() {
                       Para ver los resultados completos, necesitas cargar un archivo CSV primero
                     </MDTypography>
                     <MDTypography variant="body1" color="text" mb={4}>
-                      Ve a la sección &quot;Cargar Datos&quot; para subir un archivo CSV con información de estudiantes
+                      Ve a la sección &quot;Cargar Datos&quot; para subir un archivo CSV con
+                      <br />
+                      información de estudiantes
                     </MDTypography>
                     <MDButton
                       variant="contained"
