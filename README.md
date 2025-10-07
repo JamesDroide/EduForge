@@ -1,188 +1,184 @@
+# 🎓 EduForge - Sistema de Predicción de Deserción Estudiantil
 
-# EduForge
+![EduForge Logo](https://img.shields.io/badge/EduForge-v2.0-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.9+-green.svg)
+![React](https://img.shields.io/badge/React-18.0+-blue.svg)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-red.svg)
+![Machine Learning](https://img.shields.io/badge/ML-scikit--learn-orange.svg)
 
-**Aplicativo web basado en Machine Learning para la predicción de deserción de estudiantes trujillanos**
+## 📋 Descripción
 
-Este proyecto tiene como objetivo predecir la probabilidad de deserción de los estudiantes utilizando algoritmos de Machine Learning. El sistema analiza diversas variables académicas, como calificaciones, asistencia y conducta, para identificar estudiantes en riesgo de abandonar sus estudios.
+**EduForge** es un sistema inteligente de predicción de deserción estudiantil que utiliza algoritmos de Machine Learning para identificar estudiantes en riesgo académico. Desarrollado como proyecto de tesis, combina análisis predictivo con una interfaz intuitiva para instituciones educativas.
 
----
+## ✨ Características Principales
 
-## 📘 Descripción
+- 🤖 **Predicción Inteligente**: Modelo RandomForest entrenado para predecir deserción
+- 📊 **Dashboard Interactivo**: Visualización de datos y métricas en tiempo real
+- 👤 **Análisis Individual**: Evaluación personalizada por estudiante
+- 📈 **Reportes Completos**: Tablas detalladas con todos los resultados
+- ⚡ **Rendimiento Optimizado**: Sistema de cache para navegación fluida
+- 📱 **Interfaz Moderna**: Diseño responsive con Material-UI
 
-**Objetivo:**  
-Desarrollar una aplicación web capaz de predecir la deserción escolar de los estudiantes de Trujillo, usando modelos de aprendizaje automático. El sistema ayuda a las instituciones educativas a tomar decisiones informadas para intervenir y prevenir la deserción.
+## 🏗️ Arquitectura del Sistema
 
----
+### Backend (FastAPI + Python)
+- **API RESTful** con FastAPI
+- **Modelo ML** con scikit-learn (RandomForest)
+- **Servicios especializados** para cada funcionalidad
+- **Base de datos** SQLite para persistencia
 
-## 🚀 Funcionalidades Clave
+### Frontend (React + Material-UI)
+- **Aplicación SPA** con React 18
+- **Componentes Material-UI** para UI profesional
+- **Sistema de cache** para optimización de rendimiento
+- **Navegación fluida** entre módulos
 
-- 🧠 **Predicción de deserción**: Modelos ML para predecir el riesgo de deserción basado en calificaciones, asistencia y conducta.
-- 📊 **Dashboard educativo**: Visualización gráfica interactiva con alertas tipo semáforo para monitorear el riesgo.
-- 📈 **Predicción por variables**: Predicción de deserción por calificación, asistencia y conducta.
-- 🧾 **Recomendaciones de intervención**: Generación de acciones sugeridas basadas en el riesgo calculado de deserción.
+### Machine Learning
+- **Algoritmo**: RandomForest Classifier
+- **Características**: Notas, asistencia, conducta, inasistencia
+- **Salida**: Riesgo de deserción (Alto, Medio, Bajo)
+- **Precisión**: Optimizado para datos educativos reales
 
----
+## 🚀 Instalación y Configuración
 
-## 🧰 Herramientas y Tecnologías Utilizadas
+### Prerrequisitos
+- Python 3.9+
+- Node.js 16+
+- Git
 
-| Categoría           | Herramienta         |
-|---------------------|---------------------|
-| **Lenguaje**        | Python 3.10+        |
-| **Backend**         | FastAPI             |
-| **Modelos ML**      | Scikit-learn        |
-| **Visualización**   | Plotly, Matplotlib  |
-| **Contenedor**      | Docker              |
-| **Base de Datos**   | PostgreSQL          |
+### Backend Setup
+```bash
+# Clonar repositorio
+git clone https://github.com/JamesDroide/EduForge.git
+cd EduForge
 
----
+# Instalar dependencias Python
+pip install -r requirements.txt
 
-## 🗂 Estructura del Proyecto
+# Ejecutar servidor
+cd src
+uvicorn main:app --reload --port 8000
+```
+
+### Frontend Setup
+```bash
+# Instalar dependencias Node.js
+cd frontend
+npm install
+
+# Ejecutar aplicación
+npm start
+```
+
+## 📊 Uso del Sistema
+
+### 1. Cargar Datos
+- Sube archivos CSV con información estudiantil
+- Formato requerido: `id_estudiante`, `nombre`, `nota_final`, `asistencia`, `inasistencia`, `conducta`
+
+### 2. Visualizar Resultados
+- **Reporte General**: Dashboard con métricas globales
+- **Análisis Individual**: Evaluación detallada por estudiante
+- **Resultados Completos**: Tabla con todos los datos procesados
+
+### 3. Interpretar Predicciones
+- 🔴 **Alto Riesgo**: Requiere intervención inmediata
+- 🟡 **Medio Riesgo**: Seguimiento recomendado
+- 🟢 **Bajo Riesgo**: Estudiante en condición favorable
+
+## 🛠️ Tecnologías Utilizadas
+
+### Backend
+- **FastAPI** - Framework web moderno y rápido
+- **scikit-learn** - Machine Learning y análisis predictivo
+- **pandas** - Manipulación y análisis de datos
+- **SQLAlchemy** - ORM para base de datos
+- **uvicorn** - Servidor ASGI de alta performance
+
+### Frontend
+- **React** - Biblioteca para interfaces de usuario
+- **Material-UI** - Componentes de diseño profesional
+- **React Router** - Navegación entre páginas
+- **Axios** - Cliente HTTP para API calls
+
+### Machine Learning
+- **RandomForest** - Algoritmo de clasificación
+- **StandardScaler** - Normalización de características
+- **Joblib** - Serialización de modelos entrenados
+
+## 📁 Estructura del Proyecto
 
 ```
 EduForge/
-├── README.md            # Documentación principal del proyecto
-├── requirements.txt     # Dependencias del proyecto
-├── .gitignore           # Archivos y carpetas ignoradas por Git
-├── Dockerfile           # Configuración para contenedor Docker
-├── main.py              # Punto de entrada del sistema
-│
-├── data/                # Datos de entrada
-│   ├── raw/             # Datos crudos
-│   ├── processed/       # Dataset limpio
-│   ├── interim/         # Datos intermedios
-│   └── external/        # Otros datos (INEI, MINEDU, etc.)
-│
-├── models/              # Modelos entrenados
-│   ├── trained/         # Modelos listos para predicción
-│   ├── checkpoints/     # Pesos parciales
-│   └── prediction_model.py  # Lógica de predicción de deserción
-│
-├── notebooks/           # Cuadernos de Jupyter
-│   ├── 1.0-exploration.ipynb
-│   ├── 2.0-training.ipynb
-│   └── 3.0-evaluation.ipynb
-│
-├── reports/             # Informes y visualizaciones
-│   └── figures/         # Gráficos generados
-│
-├── references/          # Referencias y teoría
-│   ├── dropout-theory.md
-│   └── papers/
-│
-├── src/                 # Código fuente principal
-│   ├── __init__.py
-│   ├── config.py        # Parámetros globales
-│   ├── api/             # Rutas de la API
-│   │   ├── __init__.py
-│   │   └── routes/
-│   │       ├── dashboard_grades.py
-│   │       ├── prediction_calculations.py
-│   │       ├── prediction_by_grades.py
-│   │       ├── prediction_by_attendance.py
-│   │       └── prediction_by_behavior.py
-│   ├── services/        # Lógica del negocio
-│   │   ├── grades_service.py
-│   │   ├── prediction_service.py
-│   │   └── intervention_service.py
-│   ├── models/          # Modelos y funciones de predicción
-│   │   ├── grades_model.py
-│   │   ├── prediction_model.py
-│   │   └── intervention_model.py
-│
-├── frontend/            # Código frontend (React, Vue, etc.)
-│   ├── public/          # Archivos públicos (imágenes, iconos)
-│   ├── src/             # Código fuente del frontend
-│   │   ├── components/  # Componentes del frontend
-│   │   │   ├── Dashboard.js
-│   │   │   ├── PredictionForm.js
-│   │   │   └── RiskLevels.js
-│   │   ├── App.js       # Componente principal
-│   │   ├── api.js       # Conexión con el backend
-│   │   └── utils.js     # Funciones utilitarias
-│   ├── package.json     # Dependencias frontend
-│   └── webpack.config.js# Configuración de Webpack
-│
-├── tests/               # Test de servicios y API
-├── scripts/             # Scripts adicionales (entrenamiento, carga de modelos)
-└── Dockerfile           # Configuración de Docker
+├── src/                    # Backend (FastAPI)
+│   ├── main.py            # Punto de entrada de la API
+│   ├── models/            # Modelos de ML y predicción
+│   ├── services/          # Lógica de negocio
+│   └── api/               # Endpoints de la API
+├── frontend/              # Frontend (React)
+│   ├── src/
+│   │   ├── layouts/       # Páginas principales
+│   │   ├── components/    # Componentes reutilizables
+│   │   └── utils/         # Utilidades y cache
+├── scripts/               # Scripts de entrenamiento
+│   └── models/           
+│       ├── model_trainer.py    # Entrenamiento del modelo
+│       └── trained/           # Modelos entrenados (.pkl)
+├── data/                 # Datasets de entrenamiento
+├── notebooks/            # Jupyter notebooks para análisis
+└── tests/               # Tests automatizados
 ```
 
----
+## 🎯 Funcionalidades Clave
 
-## 🧪 ¿Cómo ejecutar el proyecto?
+### Predicción de Deserción
+- Análisis de patrones estudiantiles
+- Identificación temprana de riesgos
+- Recomendaciones personalizadas
 
-### Paso 1: Clonar el repositorio
+### Dashboard Analítico
+- Métricas en tiempo real
+- Gráficos interactivos
+- Filtros por nivel de riesgo
 
-```bash
-git clone https://github.com/JamesDroide/EduForge.git
+### Gestión de Datos
+- Carga masiva de CSV
+- Validación automática de datos
+- Procesamiento en tiempo real
 
-cd EduForge
-```
+## 🔮 Futuras Mejoras
 
-### Paso 2: Crear entorno virtual (opcional)
+- [ ] Integración con sistemas académicos existentes
+- [ ] Algoritmos ML adicionales (XGBoost, Neural Networks)
+- [ ] Módulo de recomendaciones personalizadas
+- [ ] API para integración externa
+- [ ] Dashboard para administradores
+- [ ] Notificaciones automáticas
 
-```bash
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scriptsctivate
-```
+## 👨‍💻 Autor
 
-### Paso 3: Instalar dependencias
-
-```bash
-pip install -r requirements.txt
-```
-
-### Paso 4: Ejecutar el servidor de la API
-
-```bash
-uvicorn src.api.main:app --reload
-```
-
-### Paso 5: Explorar los cuadernos de Jupyter (opcional)
-
-```bash
-cd notebooks/
-# Abre los cuadernos con Jupyter o en VSCode
-```
-
----
-
-## 🚧 Alcance y Futuro del Proyecto
-
-### Funcionalidades implementadas:
-- **Predicción de deserción escolar** por calificación, asistencia y conducta.
-- **Dashboard educativo interactivo** con alertas visuales.
-- **API REST** para servir los modelos de predicción.
-
-### Funcionalidades futuras:
-- **Frontend responsivo** para visualizar los resultados de forma más interactiva.
-- **Integración con bases de datos reales** de instituciones educativas.
-- **Autenticación de usuarios** y manejo de perfiles.
-
----
-
-## 📊 Métricas y Objetivos
-
-- **Aumentar la precisión** de la predicción de deserción escolar.
-- **Reducir la tasa de deserción** mediante intervenciones tempranas.
-- **Monitorear el progreso de la intervención** con datos históricos.
-
----
-
-## 👩‍💻 Autores
-
-**James Huaman Zumaeta**  
-Estudiante de la Universidad Privada Antenor Orrego (UPAO)
-📍 Trujillo, Perú – 2025  
-✉️ [jhuamanz1@upao.edu.pe]
-
-**Diana Carolina Chanta Chinchay**  
-Estudiante de la Universidad Privada Antenor Orrego (UPAO)
-📍 Trujillo, Perú – 2025  
-✉️ [dchantac1@upao.edu.pe]
-
----
+**James Droide**
+- GitHub: [@JamesDroide](https://github.com/JamesDroide)
+- Proyecto de Tesis - UPAO 2025
 
 ## 📄 Licencia
 
-Este proyecto está bajo la licencia **MIT**.
+Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+
+## 🤝 Contribuciones
+
+Las contribuciones son bienvenidas. Por favor:
+
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit tus cambios (`git commit -m 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abre un Pull Request
+
+## 📞 Soporte
+
+Si tienes alguna pregunta o problema, por favor abre un [issue](https://github.com/JamesDroide/EduForge/issues) en GitHub.
+
+---
+
+⭐ **¡Dale una estrella al proyecto si te parece útil!** ⭐
