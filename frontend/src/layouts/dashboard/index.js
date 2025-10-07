@@ -39,6 +39,7 @@ import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MDAlert from "components/MDAlert";
 import MDButton from "components/MDButton";
+import { API_ENDPOINTS } from "../../config/api";
 
 function Dashboard() {
   const location = useLocation();
@@ -80,26 +81,9 @@ function Dashboard() {
     }
   };
 
-  // Función para cargar datos de asistencia usando el nuevo endpoint con datos reales del CSV
+  // Función para cargar datos de asistencia
   const loadAttendanceData = () => {
-    // Solo cargar datos si hay un CSV válido
-    if (!hasValidCsvData()) {
-      console.log("📭 No hay CSV cargado, mostrando estado vacío para asistencia");
-      setBarChartData({
-        labels: ["Lun", "Mar", "Mié", "Jue", "Vie"],
-        datasets: [
-          {
-            label: "No hay datos - Cargar CSV",
-            data: [0, 0, 0, 0, 0],
-            backgroundColor: "#cccccc",
-          },
-        ],
-      });
-      return;
-    }
-
-    console.log("🔄 Cargando datos de asistencia...");
-    fetch("http://localhost:8000/dashboard_attendance/attendance_chart_real")
+    fetch(API_ENDPOINTS.ATTENDANCE_CHART)
       .then((res) => {
         console.log("📡 Respuesta del servidor recibida:", res.status);
         if (!res.ok) throw new Error("No se pudo obtener asistencia");
@@ -143,38 +127,9 @@ function Dashboard() {
       });
   };
 
-  // Función para cargar datos de riesgo
+  // Función para cargar resumen de riesgo
   const loadRiskData = () => {
-    // Solo cargar datos si hay un CSV válido
-    if (!hasValidCsvData()) {
-      console.log("📭 No hay CSV cargado, mostrando estado vacío para riesgo");
-      setLineChartData({
-        labels: [
-          "Ene",
-          "Feb",
-          "Mar",
-          "Abr",
-          "May",
-          "Jun",
-          "Jul",
-          "Ago",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dic",
-        ],
-        datasets: {
-          label: "No hay datos - Cargar CSV",
-          data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          counts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          totals: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        },
-      });
-      setLoading(false);
-      return;
-    }
-
-    fetch("http://localhost:8000/dashboard_risk/risk_summary")
+    fetch(API_ENDPOINTS.RISK_SUMMARY)
       .then((res) => {
         if (!res.ok) throw new Error("No se pudo obtener riesgo de deserción");
         return res.json();

@@ -34,6 +34,8 @@ import team3 from "assets/images/team-3.jpg";
 import team4 from "assets/images/juancito.jpg";
 import logoJira from "assets/images/marquito.jpg";
 
+import { API_ENDPOINTS } from "../../config/api";
+
 const defaultImages = [logoXD, logoSlack, team1, team2, team3, team4, logoJira];
 
 function IndividualAnalysis() {
@@ -197,7 +199,7 @@ function IndividualAnalysis() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8000/dashboard_risk/students_at_risk");
+      const response = await fetch(API_ENDPOINTS.STUDENTS_AT_RISK);
 
       if (!response.ok) {
         throw new Error("No se pudieron cargar los estudiantes");

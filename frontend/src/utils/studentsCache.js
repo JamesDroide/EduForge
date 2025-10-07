@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_ENDPOINTS } from "../config/api";
 
 // Cache global para datos de estudiantes
 class StudentsCache {
@@ -31,7 +32,7 @@ class StudentsCache {
     this.loading = true;
 
     try {
-      const response = await fetch("http://localhost:8000/dashboard_risk/students_at_risk", {
+      const response = await fetch(API_ENDPOINTS.STUDENTS_AT_RISK, {
         timeout: 10000 // 10 segundos de timeout
       });
 
