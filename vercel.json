@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "name": "eduforge",
   "builds": [
     {
       "src": "frontend/package.json",
@@ -16,14 +17,24 @@
       "dest": "/static/$1"
     },
     {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg))",
+      "headers": { "cache-control": "s-maxage=31536000,immutable" },
+      "dest": "/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
   ],
   "build": {
     "env": {
-      "REACT_APP_API_URL": "@react_app_api_url"
+      "REACT_APP_API_URL": "@react_app_api_url",
+      "REACT_APP_NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "frontend/src/**": {
+      "includeFiles": "frontend/build/**"
     }
   }
 }
-
