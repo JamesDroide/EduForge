@@ -24,8 +24,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # Desarrollo local
-        "https://*.vercel.app",   # Vercel (profesional)
-        "https://*.up.railway.app" # Railway (backend)
+        "https://eduforge-git-main-jamesdroides-projects.vercel.app",  # Dominio exacto de Vercel
+        "https://eduforge-production.up.railway.app"  # Railway backend
     ],
     allow_credentials=True,
     allow_methods=["*"],
