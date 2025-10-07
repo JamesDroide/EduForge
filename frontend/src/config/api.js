@@ -1,11 +1,19 @@
 // Configuración de API para diferentes entornos
 const getApiUrl = () => {
   // En producción, usar la variable de entorno
-  if (process.env.NODE_ENV === "production") {
-    return process.env.REACT_APP_API_URL || "https://your-backend-app-name.herokuapp.com";
+  let apiUrl = process.env.REACT_APP_API_URL || "https://eduforge-production.up.railway.app";
+
+  // Eliminar barra extra al final (si la tiene)
+  if (apiUrl.endsWith('/')) {
+    apiUrl = apiUrl.slice(0, -1);  // Elimina la última barra
   }
+
   // En desarrollo, usar localhost
-  return "http://localhost:8000";
+  if (process.env.NODE_ENV !== "production") {
+    return "http://localhost:8000";
+  }
+
+  return apiUrl;
 };
 
 export const API_BASE_URL = getApiUrl();
