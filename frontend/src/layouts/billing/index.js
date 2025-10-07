@@ -214,7 +214,7 @@ function Billing() {
                       Para ver los resultados completos, necesitas cargar un archivo CSV primero
                     </MDTypography>
                     <MDTypography variant="body1" color="text" mb={4}>
-                      Ve a la sección &quot;Cargar Datos&quot; para subir un archivo CSV con
+                      Ve a la sección "Cargar Datos" para subir un archivo CSV con
                       información de estudiantes
                     </MDTypography>
                     <MDButton
@@ -365,7 +365,10 @@ function Billing() {
                                 studentData.Nombre ||
                                 "Estudiante",
                               nota: parseFloat(
-                                studentData.nota_final || studentData.nota || studentData.Nota || 0
+                                studentData.nota_final ||
+                                  studentData.nota ||
+                                  studentData.Nota ||
+                                  0
                               ),
                               asistencia: parseFloat(
                                 studentData.asistencia || studentData.Asistencia || 0
@@ -376,7 +379,7 @@ function Billing() {
                                 studentData["Riesgo de Deserción"] ||
                                 "Bajo",
                               conducta: studentData.conducta || studentData.Conducta || "Regular",
-                              ...studentData, // Incluir todos los datos originales
+                              ...studentData,
                             };
 
                             // Buscar datos completos desde localStorage solo como respaldo
@@ -430,11 +433,11 @@ function Billing() {
 
                             console.log("📤 Navegando con datos:", completeStudentData);
 
-                            // Navegar al análisis individual
-                            navigate("/individual", {
+                            // Navegar al análisis individual con el ID del estudiante en la URL
+                            navigate(`/individual?studentId=${completeStudentData.student_id}`, {
                               state: {
                                 preselectedStudent: completeStudentData,
-                                fromDashboard: true,
+                                fromResultados: true,
                               },
                             });
                           };
@@ -460,10 +463,11 @@ function Billing() {
                                     key === "nombre" ? "Clic para ver análisis individual" : ""
                                   }
                                 >
-                                  {typeof value === "number"
-                                    ? key === "id_estudiante" || key.toLowerCase().includes("id")
-                                      ? Math.round(value)
-                                      : value.toFixed(2)
+                                  {typeof value === "number" &&
+                                  (key === "id_estudiante" || key.toLowerCase().includes("id"))
+                                    ? Math.round(value)
+                                    : typeof value === "number"
+                                    ? value.toFixed(2)
                                     : value}
                                 </td>
                               ))}

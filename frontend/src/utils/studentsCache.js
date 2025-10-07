@@ -1,16 +1,17 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 // Cache global para datos de estudiantes
 class StudentsCache {
   constructor() {
     this.cache = new Map();
     this.lastFetch = null;
-    this.CACHE_DURATION = 30 * 1000; // 30 segundos
+    this.CACHE_DURATION = 60 * 1000; // Aumentar a 60 segundos
+    this.loading = false; // Evitar múltiples peticiones simultáneas
   }
 
   // Verificar si el cache es válido
   isValid() {
-    return this.lastFetch && Date.now() - this.lastFetch < this.CACHE_DURATION;
+    return this.lastFetch && (Date.now() - this.lastFetch) < this.CACHE_DURATION;
   }
 
   // Obtener datos del cache o hacer fetch si es necesario
@@ -20,9 +21,19 @@ class StudentsCache {
       return this.cache.get("students");
     }
 
+    // Evitar múltiples peticiones simultáneas
+    if (this.loading) {
+      console.log("⏳ Esperando petición en curso...");
+      return this.cache.get("students") || [];
+    }
+
     console.log("🔄 Cargando datos del servidor...");
+    this.loading = true;
+
     try {
-      const response = await fetch("http://localhost:8000/dashboard_risk/students_at_risk");
+      const response = await fetch("http://localhost:8000/dashboard_risk/students_at_risk", {
+        timeout: 10000 // 10 segundos de timeout
+      });
 
       if (!response.ok) {
         throw new Error("No se pudieron cargar los estudiantes");
@@ -42,67 +53,71 @@ class StudentsCache {
     } catch (error) {
       console.error("❌ Error cargando estudiantes:", error);
       return this.cache.get("students") || [];
+    } finally {
+      this.loading = false;
     }
   }
 
   // Procesar datos una sola vez
   processStudentData(rawData) {
+    if (!rawData || rawData.length === 0) {
+      return [];
+    }
+
     try {
       const storedPredictions = localStorage.getItem("latest_predictions");
-      let parsedLocalData = [];
+      let fullDataMap = new Map();
 
       if (storedPredictions) {
-        parsedLocalData = JSON.parse(storedPredictions);
+        const parsedData = JSON.parse(storedPredictions);
+        parsedData.forEach(student => {
+          const key = student.id_estudiante || student.student_id || student.nombre || student.name;
+          if (key) fullDataMap.set(key.toString(), student);
+        });
       }
 
       return rawData.map((student) => {
-        let studentData = {
-          id_estudiante: student.student_id,
-          nombre: student.name,
-          nota_final: parseFloat(student.nota || 0),
-          asistencia: parseFloat(student.asistencia || 0),
-          riesgo_desercion: student.risk_level || "Bajo",
-          conducta: student.conducta || "Regular",
-          fecha: new Date().toISOString().split("T")[0],
+        // Buscar datos completos
+        const fullData = fullDataMap.get(student.student_id?.toString()) ||
+                         fullDataMap.get(student.name) ||
+                         {};
+
+        return {
+          student_id: student.student_id,
+          name: student.name,
+          nota: parseFloat(fullData.nota_final || fullData.nota || student.nota || 0),
+          asistencia: parseFloat(fullData.asistencia || student.asistencia || 0),
+          risk_level: student.risk_level || fullData.riesgo_desercion || "Bajo",
+          conducta: fullData.conducta || student.conducta || "Regular",
+          ...student,
+          ...fullData
         };
-
-        // Buscar datos completos en localStorage
-        const fullStudentData = parsedLocalData.find(
-          (p) =>
-            (p.id_estudiante && p.id_estudiante.toString() === student.student_id.toString()) ||
-            (p.nombre && p.nombre === student.name)
-        );
-
-        if (fullStudentData) {
-          studentData = { ...fullStudentData };
-        }
-
-        return studentData;
       });
-    } catch (e) {
-      console.warn("Error procesando datos:", e);
+    } catch (error) {
+      console.error("Error processing student data:", error);
       return rawData;
     }
   }
 
-  // Invalidar cache cuando se sube nuevo CSV
+  // Invalidar cache
   invalidate() {
-    console.log("🗑️ Cache invalidado - próxima carga será fresca");
     this.cache.clear();
     this.lastFetch = null;
+    this.loading = false;
+    console.log("🗑️ Cache invalidado - próxima carga será fresca");
   }
 }
 
 // Instancia global del cache
-export const studentsCache = new StudentsCache();
+const studentsCache = new StudentsCache();
 
-// Hook personalizado optimizado
+// Hook personalizado para usar el cache
 export const useStudentsCache = () => {
-  const [students, setStudents] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
-  const [hasValidData, setHasValidData] = React.useState(false);
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasValidData, setHasValidData] = useState(false);
 
-  const loadStudents = React.useCallback(async (forceRefresh = false) => {
+  const fetchStudents = async (forceRefresh = false) => {
     setLoading(true);
     try {
       const data = await studentsCache.getStudents(forceRefresh);
@@ -115,37 +130,29 @@ export const useStudentsCache = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  React.useEffect(() => {
-    loadStudents();
+  useEffect(() => {
+    fetchStudents();
 
-    const handleCsvUploaded = () => {
-      console.log("🔄 Nuevo CSV detectado - invalidando cache");
-      studentsCache.invalidate();
-      setTimeout(() => loadStudents(true), 1000);
-    };
-
+    // Escuchar cambios en localStorage
     const handleStorageChange = (e) => {
-      if (e.key === "csv_uploaded" || e.key === "latest_predictions") {
-        studentsCache.invalidate();
-        loadStudents(true);
-        if (e.key === "csv_uploaded") {
-          localStorage.removeItem("csv_uploaded");
-        }
+      if (e.key === "latest_predictions" || e.key === "csv_uploaded") {
+        fetchStudents(true); // Forzar refresh
       }
     };
 
-    window.addEventListener("csvUploaded", handleCsvUploaded);
     window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
-    return () => {
-      window.removeEventListener("csvUploaded", handleCsvUploaded);
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, [loadStudents]);
-
-  return { students, loading, hasValidData, refresh: () => loadStudents(true) };
+  return {
+    students,
+    loading,
+    hasValidData,
+    refetch: () => fetchStudents(true),
+    invalidateCache: () => studentsCache.invalidate()
+  };
 };
 
 export default studentsCache;

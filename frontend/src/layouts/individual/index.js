@@ -5,7 +5,7 @@
 */
 
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 // @mui material components
 import Grid from "@mui/material/Grid";
@@ -39,6 +39,7 @@ const defaultImages = [logoXD, logoSlack, team1, team2, team3, team4, logoJira];
 function IndividualAnalysis() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentData, setStudentData] = useState(null);
@@ -85,11 +86,29 @@ function IndividualAnalysis() {
     if (students.length > 0) {
       checkPreselectedStudent();
     }
-  }, [students.length, location.state]);
+  }, [students.length, location.state, searchParams]);
 
   // Función separada para verificar estudiantes preseleccionados
   const checkPreselectedStudent = () => {
-    // Primero verificar desde state (navegación directa)
+    // Primero verificar desde URL parameters (desde Resultados Completos)
+    const studentIdFromUrl = searchParams.get("studentId");
+    if (studentIdFromUrl && students.length > 0) {
+      const studentFromUrl = students.find(
+        (s) =>
+          s.student_id?.toString() === studentIdFromUrl ||
+          s.id_estudiante?.toString() === studentIdFromUrl ||
+          s.ID?.toString() === studentIdFromUrl
+      );
+
+      if (studentFromUrl) {
+        console.log("📊 Estudiante encontrado desde URL:", studentFromUrl);
+        setSelectedStudent(studentFromUrl);
+        processStudentData(studentFromUrl);
+        return;
+      }
+    }
+
+    // Segundo: verificar desde state (navegación directa)
     if (location.state?.preselectedStudent) {
       const student = location.state.preselectedStudent;
       console.log("📊 Estudiante preseleccionado desde state:", student);
@@ -98,7 +117,7 @@ function IndividualAnalysis() {
       return;
     }
 
-    // Luego verificar desde localStorage (respaldo)
+    // Tercero: verificar desde localStorage (respaldo)
     const storedStudent = localStorage.getItem("selected_student_for_analysis");
     if (storedStudent) {
       try {
