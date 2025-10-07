@@ -12,7 +12,7 @@ class StudentsCache {
 
   // Verificar si el cache es válido
   isValid() {
-    return this.lastFetch && (Date.now() - this.lastFetch) < this.CACHE_DURATION;
+    return this.lastFetch && Date.now() - this.lastFetch < this.CACHE_DURATION;
   }
 
   // Obtener datos del cache o hacer fetch si es necesario
@@ -33,7 +33,7 @@ class StudentsCache {
 
     try {
       const response = await fetch(API_ENDPOINTS.STUDENTS_AT_RISK, {
-        timeout: 10000 // 10 segundos de timeout
+        timeout: 10000, // 10 segundos de timeout
       });
 
       if (!response.ok) {
@@ -71,7 +71,7 @@ class StudentsCache {
 
       if (storedPredictions) {
         const parsedData = JSON.parse(storedPredictions);
-        parsedData.forEach(student => {
+        parsedData.forEach((student) => {
           const key = student.id_estudiante || student.student_id || student.nombre || student.name;
           if (key) fullDataMap.set(key.toString(), student);
         });
@@ -79,9 +79,8 @@ class StudentsCache {
 
       return rawData.map((student) => {
         // Buscar datos completos
-        const fullData = fullDataMap.get(student.student_id?.toString()) ||
-                         fullDataMap.get(student.name) ||
-                         {};
+        const fullData =
+          fullDataMap.get(student.student_id?.toString()) || fullDataMap.get(student.name) || {};
 
         return {
           student_id: student.student_id,
@@ -91,7 +90,7 @@ class StudentsCache {
           risk_level: student.risk_level || fullData.riesgo_desercion || "Bajo",
           conducta: fullData.conducta || student.conducta || "Regular",
           ...student,
-          ...fullData
+          ...fullData,
         };
       });
     } catch (error) {
