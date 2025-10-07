@@ -72,15 +72,17 @@ export default function App() {
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
 
-  // Cache for the rtl
-  useMemo(() => {
-    const cacheRtl = createCache({
+  // Cache for the rtl - Optimizado para evitar recreación
+  const memoizedRtlCache = useMemo(() => {
+    return createCache({
       key: "rtl",
       stylisPlugins: [rtlPlugin],
     });
-
-    setRtlCache(cacheRtl);
   }, []);
+
+  useEffect(() => {
+    setRtlCache(memoizedRtlCache);
+  }, [memoizedRtlCache]);
 
   // Open sidenav when mouse enter on mini sidenav
   const handleOnMouseEnter = () => {
@@ -112,18 +114,23 @@ export default function App() {
     document.scrollingElement.scrollTop = 0;
   }, [pathname]);
 
-  const getRoutes = (allRoutes) =>
-    allRoutes.map((route) => {
-      if (route.collapse) {
-        return getRoutes(route.collapse);
-      }
+  // Optimized getRoutes function with memoization
+  const getRoutes = useMemo(() => {
+    const processRoutes = (allRoutes) =>
+      allRoutes.map((route) => {
+        if (route.collapse) {
+          return processRoutes(route.collapse);
+        }
 
-      if (route.route) {
-        return <Route exact path={route.route} element={route.component} key={route.key} />;
-      }
+        if (route.route) {
+          return <Route exact path={route.route} element={route.component} key={route.key} />;
+        }
 
-      return null;
-    });
+        return null;
+      });
+
+    return processRoutes(routes);
+  }, []);
 
   const configsButton = (
     <MDBox
@@ -169,10 +176,10 @@ export default function App() {
         )}
         {layout === "vr" && <Configurator />}
         <Routes>
-          {getRoutes(routes)}
+          {getRoutes}
           <Route path="/upload-data" element={<UploadData />} />
           <Route path="/billing" element={<Billing />} />
-          <Route path="*" element={<Navigate to="/reporte" />} />
+          <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </ThemeProvider>
     </CacheProvider>
@@ -195,10 +202,10 @@ export default function App() {
       )}
       {layout === "vr" && <Configurator />}
       <Routes>
-        {getRoutes(routes)}
+        {getRoutes}
         <Route path="/upload-data" element={<UploadData />} />
         <Route path="/billing" element={<Billing />} />
-        <Route path="*" element={<Navigate to="/reporte" />} />
+        <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </ThemeProvider>
   );

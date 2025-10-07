@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/build.sh">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/build.sh" />
+              <option name="updatedContent" value="#!/usr/bin/env bash&#10;# Build script for Render&#10;&#10;# Install Python dependencies&#10;pip install -r requirements.txt&#10;&#10;# Create necessary directories&#10;mkdir -p src/uploads&#10;mkdir -p scripts/models/trained&#10;&#10;echo &quot;Build completed successfully!&quot;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

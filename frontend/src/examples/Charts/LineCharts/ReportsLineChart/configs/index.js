@@ -30,6 +30,9 @@ function configs(labels, datasets) {
           fill: true,
           data: datasets.data,
           maxBarThickness: 6,
+          // Agregar datos adicionales para tooltips
+          counts: datasets.counts || [],
+          totals: datasets.totals || [],
         },
       ],
     },
@@ -39,6 +42,34 @@ function configs(labels, datasets) {
       plugins: {
         legend: {
           display: false,
+        },
+        tooltip: {
+          mode: "index",
+          intersect: false,
+          backgroundColor: "rgba(0,0,0,0.8)",
+          titleColor: "#fff",
+          bodyColor: "#fff",
+          borderColor: "rgba(255,255,255,0.3)",
+          borderWidth: 1,
+          displayColors: true,
+          callbacks: {
+            title: function (tooltipItems) {
+              return `${tooltipItems[0].label}`;
+            },
+            label: function (context) {
+              const percentage = context.parsed.y;
+              const counts = context.dataset.counts || [];
+              const totals = context.dataset.totals || [];
+              const studentsAtRisk = counts[context.dataIndex] || 0;
+              const totalStudents = totals[context.dataIndex] || 0;
+
+              return [
+                `Riesgo: ${percentage}%`,
+                `Estudiantes en riesgo: ${studentsAtRisk}`,
+                `Total estudiantes: ${totalStudents}`,
+              ];
+            },
+          },
         },
       },
       interaction: {
@@ -66,6 +97,18 @@ function configs(labels, datasets) {
               style: "normal",
               lineHeight: 2,
             },
+            callback: function (value) {
+              return value + "%";
+            },
+          },
+          title: {
+            display: true,
+            text: "Porcentaje de Riesgo",
+            color: "#f8f9fa",
+            font: {
+              size: 12,
+              weight: "bold",
+            },
           },
         },
         x: {
@@ -86,6 +129,15 @@ function configs(labels, datasets) {
               family: "Roboto",
               style: "normal",
               lineHeight: 2,
+            },
+          },
+          title: {
+            display: true,
+            text: "Meses",
+            color: "#f8f9fa",
+            font: {
+              size: 12,
+              weight: "bold",
             },
           },
         },

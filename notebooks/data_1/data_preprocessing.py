@@ -1,6 +1,9 @@
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
+#Cargar csv
+ruta_csv = r'C:\Users\james\OneDrive\Documentos\PREGRADO UPAO\CICLO 9\Tesis I\Proyecto\BackEnds\EduForge\data\student_data.csv'
+
 # Función para cargar, preprocesar los datos y guardar el CSV procesado
 def cargar_y_preprocesar_datos(ruta_csv, normalizar=True, columnas_a_normalizar=None, guardar_csv=False, ruta_guardado=None):
     # Cargar el CSV

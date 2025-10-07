@@ -21,9 +21,8 @@ import Footer from "examples/Footer";
 function UploadData() {
   const [fileData, setFileData] = useState([]);
   const [fileName, setFileName] = useState("");
-  const [rawFile, setRawFile] = useState(null); // Guardamos el archivo original
+  const [rawFile, setRawFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [predictions, setPredictions] = useState([]);
   const navigate = useNavigate();
   const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -32,11 +31,65 @@ function UploadData() {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-      setFileData(json);
+      try {
+        const data = new Uint8Array(e.target.result);
+
+        // Verificar si es archivo CSV o Excel
+        const isCSV = file.name.toLowerCase().endsWith(".csv");
+
+        if (isCSV) {
+          // Para archivos CSV, leer como texto
+          const csvReader = new FileReader();
+          csvReader.onload = (csvEvent) => {
+            try {
+              const csvText = csvEvent.target.result;
+              const lines = csvText.split("\n");
+              const csvData = lines.map((line) => line.split(",").map((cell) => cell.trim()));
+              setFileData(csvData);
+            } catch (csvError) {
+              console.error("Error procesando CSV:", csvError);
+              alert("Error al procesar el archivo CSV. Verifique que el formato sea correcto.");
+            }
+          };
+          csvReader.readAsText(file);
+        } else {
+          // Para archivos Excel
+          const workbook = XLSX.read(data, {
+            type: "array",
+            cellDates: true,
+            dateNF: "dd/mm/yyyy",
+          });
+
+          if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+            throw new Error("No se pudo encontrar hojas en el archivo Excel");
+          }
+
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          if (!worksheet) {
+            throw new Error("La primera hoja del archivo está vacía");
+          }
+
+          const json = XLSX.utils.sheet_to_json(worksheet, {
+            header: 1,
+            defval: "",
+            blankrows: false,
+          });
+          setFileData(json);
+        }
+      } catch (error) {
+        console.error("Error procesando archivo:", error);
+        alert(
+          `Error al procesar el archivo: ${error.message}. Por favor verifique que el archivo no esté corrupto y tenga el formato correcto.`
+        );
+        setFileData([]);
+        setFileName("");
+        setRawFile(null);
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error("Error leyendo archivo:", error);
+      alert("Error al leer el archivo. Por favor intente nuevamente.");
     };
 
     reader.readAsArrayBuffer(file);
@@ -59,13 +112,10 @@ function UploadData() {
       const formData = new FormData();
       formData.append("file", rawFile);
 
-      const uploadRes = await fetch(
-        "https://backendtesis-eduforge-production.up.railway.app/upload",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const uploadRes = await fetch("http://localhost:8000/upload", {
+        method: "POST",
+        body: formData,
+      });
       if (!uploadRes.ok) {
         throw new Error("Error al subir el archivo");
       }
@@ -74,9 +124,7 @@ function UploadData() {
       const cleanFilename = uploadResult.filename.trim();
       console.log("Filename limpio:", cleanFilename);
       const predictRes = await fetch(
-        `https://backendtesis-eduforge-production.up.railway.app/predict?filename=${encodeURIComponent(
-          cleanFilename
-        )}`,
+        `http://localhost:8000/predict?filename=${encodeURIComponent(cleanFilename)}`,
         {
           method: "POST",
         }
@@ -87,9 +135,25 @@ function UploadData() {
       }
 
       const predictions = await predictRes.json();
+      console.log("🔍 Predictions recibidas:", predictions.predictions?.length, "registros");
 
-      // Paso 3: Navegar a la página de resultados con los datos
-      navigate("/Analisis", { state: { predictions: predictions.predictions } });
+      console.log("🔄 REDIRECCIÓN INMEDIATA a /resultados-completos...");
+
+      // Guardar datos procesados para que estén disponibles en Resultados completos
+      localStorage.setItem("latest_predictions", JSON.stringify(predictions.predictions));
+      localStorage.setItem("csv_upload_timestamp", new Date().toISOString()); // Agregar timestamp
+      localStorage.setItem("csv_uploaded", Date.now().toString());
+      localStorage.setItem("fromUpload", "true");
+
+      // Disparar evento personalizado para actualizar dashboards
+      window.dispatchEvent(
+        new CustomEvent("csvUploaded", {
+          detail: { predictions: predictions.predictions },
+        })
+      );
+
+      // REDIRECCIÓN SIMPLE - solo la ruta sin parámetros
+      navigate("/resultados-completos");
     } catch (error) {
       alert("Error al procesar el archivo");
       console.error(error);
@@ -97,6 +161,17 @@ function UploadData() {
       setIsProcessing(false);
     }
   };
+
+  function excelDateToJSDate(serial) {
+    // Convierte número de Excel a fecha legible DD/MM/YYYY
+    const utc_days = Math.floor(serial - 25569);
+    const utc_value = utc_days * 86400;
+    const date_info = new Date(utc_value * 1000);
+    const day = String(date_info.getDate()).padStart(2, "0");
+    const month = String(date_info.getMonth() + 1).padStart(2, "0");
+    const year = date_info.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
 
   return (
     <DashboardLayout>
@@ -110,7 +185,10 @@ function UploadData() {
                   Subir archivo CSV o Excel para análisis
                 </MDTypography>
                 <MDBox
-                  {...getRootProps()}
+                  onClick={getRootProps().onClick}
+                  onKeyDown={getRootProps().onKeyDown}
+                  tabIndex={getRootProps().tabIndex}
+                  role={getRootProps().role}
                   sx={{
                     border: "2px dashed #aaa",
                     borderRadius: "10px",
@@ -120,7 +198,16 @@ function UploadData() {
                     cursor: "pointer",
                   }}
                 >
-                  <input {...getInputProps()} />
+                  <input
+                    ref={getInputProps().ref}
+                    type={getInputProps().type}
+                    multiple={getInputProps().multiple}
+                    accept={getInputProps().accept}
+                    onChange={getInputProps().onChange}
+                    onClick={getInputProps().onClick}
+                    style={getInputProps().style}
+                    tabIndex={getInputProps().tabIndex}
+                  />
                   <Icon fontSize="large">cloud_upload</Icon>
                   <MDTypography variant="body1">
                     {isDragActive
@@ -146,18 +233,34 @@ function UploadData() {
                       <tbody>
                         {fileData.slice(0, 10).map((row, i) => (
                           <tr key={i}>
-                            {row.map((cell, j) => (
-                              <td
-                                key={j}
-                                style={{
-                                  border: "1px solid #ddd",
-                                  padding: "8px",
-                                  fontSize: "14px",
-                                }}
-                              >
-                                {cell}
-                              </td>
-                            ))}
+                            {row.map((cell, j) => {
+                              let value = cell;
+                              const isFechaCol =
+                                fileData[0][j] &&
+                                fileData[0][j].toString().toLowerCase().includes("fecha");
+                              // Si la columna es 'fecha' y el valor es numérico, convertirlo
+                              if (
+                                isFechaCol &&
+                                i > 0 &&
+                                cell !== "" &&
+                                !isNaN(Number(cell)) &&
+                                Number(cell) > 30000 // rango típico de fechas Excel
+                              ) {
+                                value = excelDateToJSDate(Number(cell));
+                              }
+                              return (
+                                <td
+                                  key={j}
+                                  style={{
+                                    border: "1px solid #ddd",
+                                    padding: "8px",
+                                    fontSize: "14px",
+                                  }}
+                                >
+                                  {value}
+                                </td>
+                              );
+                            })}
                           </tr>
                         ))}
                       </tbody>
@@ -170,41 +273,13 @@ function UploadData() {
                     variant="gradient"
                     color="info"
                     onClick={handleUpload}
-                    disabled={!rawFile}
+                    disabled={!rawFile || isProcessing}
                   >
-                    Enviar
+                    {isProcessing ? "Procesando..." : "Enviar"}
                   </MDButton>
                 </MDBox>
 
-                {predictions.length > 0 && (
-                  <MDBox mt={4}>
-                    <MDTypography variant="h6" mb={1}>
-                      Resultados de deserción:
-                    </MDTypography>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr>
-                          {Object.keys(predictions[0]).map((col, i) => (
-                            <th key={i} style={{ border: "1px solid #ccc", padding: "6px" }}>
-                              {col}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {predictions.map((row, i) => (
-                          <tr key={i}>
-                            {Object.values(row).map((val, j) => (
-                              <td key={j} style={{ border: "1px solid #ccc", padding: "6px" }}>
-                                {val}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </MDBox>
-                )}
+                {/* Eliminamos la sección de resultados para que redirija correctamente */}
               </MDBox>
             </Card>
           </Grid>

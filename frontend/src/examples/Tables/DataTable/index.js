@@ -204,14 +204,65 @@ function DataTable({
         <TableBody {...getTableBodyProps()}>
           {page.map((row, key) => {
             prepareRow(row);
+            // Detectar si la fila tiene "Alto" en alguna celda
+            const isAlto = row.cells.some((cell) => {
+              let value = "";
+              if (typeof cell.value === "string") {
+                value = cell.value;
+              } else if (cell.value && typeof cell.value === "object" && cell.value.props) {
+                if (typeof cell.value.props.children === "string") {
+                  value = cell.value.props.children;
+                } else if (Array.isArray(cell.value.props.children)) {
+                  value = cell.value.props.children
+                    .filter((child) => typeof child === "string")
+                    .join("");
+                }
+              }
+              return value === "Alto";
+            });
             return (
-              <TableRow key={key} {...row.getRowProps()}>
+              <TableRow
+                {...row.getRowProps()}
+                key={key}
+                sx={
+                  isAlto
+                    ? {
+                        backgroundColor: "#ffcdd2 !important",
+                        color: "#c62828 !important",
+                        fontWeight: "bold !important",
+                        border: "2px solid #f44336 !important",
+                        "& .MuiTableCell-root": {
+                          backgroundColor: "#ffcdd2 !important",
+                          color: "#c62828 !important",
+                          fontWeight: "bold !important",
+                        },
+                        "&:hover": {
+                          backgroundColor: "#ffb3ba !important",
+                        },
+                      }
+                    : {}
+                }
+              >
                 {row.cells.map((cell, idx) => (
                   <DataTableBodyCell
                     key={idx}
                     noBorder={noEndBorder && rows.length - 1 === key}
                     align={cell.column.align ? cell.column.align : "left"}
                     {...cell.getCellProps()}
+                    sx={
+                      isAlto
+                        ? {
+                            backgroundColor: "#ffcdd2 !important",
+                            color: "#c62828 !important",
+                            fontWeight: "bold !important",
+                            "& .MuiBox-root": {
+                              backgroundColor: "#ffcdd2 !important",
+                              color: "#c62828 !important",
+                              fontWeight: "bold !important",
+                            },
+                          }
+                        : {}
+                    }
                   >
                     {cell.render("Cell")}
                   </DataTableBodyCell>

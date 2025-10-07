@@ -15,6 +15,8 @@ Coded by www.creative-tim.com
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
+import { useState, useEffect } from "react";
+
 // @mui material components
 import Tooltip from "@mui/material/Tooltip";
 import MDBox from "components/MDBox";
@@ -22,19 +24,84 @@ import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
 import MDProgress from "components/MDProgress";
 
-// Images
+// Images - mantener las imágenes por defecto para estudiantes sin foto específica
 import logoXD from "assets/images/juancito.jpg";
-import logoAtlassian from "assets/images/small-logos/logo-atlassian.svg";
 import logoSlack from "assets/images/rochita.jpg";
 import logoSpotify from "assets/images/small-logos/logo-spotify.svg";
 import logoJira from "assets/images/marquito.jpg";
-import logoInvesion from "assets/images/small-logos/logo-invision.svg";
 import team1 from "assets/images/team-1.jpg";
 import team2 from "assets/images/team-2.jpg";
 import team3 from "assets/images/team-3.jpg";
 import team4 from "assets/images/juancito.jpg";
 
+// Array de imágenes por defecto para rotar entre estudiantes
+const defaultImages = [logoXD, logoSlack, team1, team2, team3, team4, logoJira];
+
 export default function data() {
+  const [studentsAtRisk, setStudentsAtRisk] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Función para obtener estudiantes en riesgo del backend
+  const fetchStudentsAtRisk = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:8000/dashboard_risk/students_at_risk");
+
+      if (!response.ok) {
+        throw new Error("No se pudieron cargar los estudiantes en riesgo");
+      }
+
+      const data = await response.json();
+      setStudentsAtRisk(data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching students at risk:", err);
+      setError(err.message);
+      setStudentsAtRisk([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    fetchStudentsAtRisk();
+
+    // Actualizar cada 30 segundos para detectar nuevos datos
+    const interval = setInterval(fetchStudentsAtRisk, 30000);
+
+    // Función para escuchar cuando se sube un nuevo CSV
+    const handleCsvUploaded = (event) => {
+      console.log("🔄 CSV procesado, actualizando lista de estudiantes en riesgo...", event.detail);
+      // Esperar un poco para que se guarden los datos en la base de datos
+      setTimeout(() => {
+        fetchStudentsAtRisk();
+      }, 2000); // Esperar 2 segundos para asegurar que los datos se guardaron
+    };
+
+    // Función para escuchar cambios en localStorage
+    const handleStorageChange = (e) => {
+      if (e.key === "csv_uploaded") {
+        console.log("🔄 Nuevo CSV detectado en localStorage, actualizando lista...");
+        setTimeout(() => {
+          fetchStudentsAtRisk();
+        }, 2000);
+        localStorage.removeItem("csv_uploaded");
+      }
+    };
+
+    // Escuchar eventos de CSV cargado
+    window.addEventListener("csvUploaded", handleCsvUploaded);
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("csvUploaded", handleCsvUploaded);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+
   const avatars = (members) =>
     members.map(([image, name]) => (
       <Tooltip key={name} title={name} placeholder="bottom">
@@ -69,93 +136,45 @@ export default function data() {
     </MDBox>
   );
 
+  // Generar filas basadas en los datos del backend
+  const generateRows = () => {
+    if (loading) {
+      return [];
+    }
+
+    if (error) {
+      return [];
+    }
+
+    // Filtrar solo estudiantes con riesgo "Alto" (el riesgo medio ahora va en componente separado)
+    const highRiskStudents = studentsAtRisk.filter((student) => student.risk_level === "Alto");
+
+    if (highRiskStudents.length === 0) {
+      return [];
+    }
+
+    return highRiskStudents.map((student, index) => {
+      // Asignar imagen por defecto rotando entre las disponibles
+      const defaultImage = defaultImages[index % defaultImages.length];
+
+      return {
+        companies: <Company image={defaultImage} name={student.name} />,
+        budget: (
+          <MDTypography color="error" fontWeight="bold">
+            {student.risk_level}
+          </MDTypography>
+        ),
+      };
+    });
+  };
+
   return {
     columns: [
       { Header: "Estudiante", accessor: "companies", width: "45%", align: "left" },
       { Header: "Nivel", accessor: "budget", align: "center" },
     ],
-
-    rows: [
-      {
-        companies: <Company image={logoXD} name="Juan Gutierrez" />,
-        members: (
-          <MDBox display="flex" py={1}>
-            {avatars([[team4, "Jessica Doe"]])}
-          </MDBox>
-        ),
-        budget: (
-          <MDTypography variant="caption" color="text" fontWeight="medium">
-            Secundaria
-          </MDTypography>
-        ),
-        completion: (
-          <MDBox width="8rem" textAlign="left">
-            <MDProgress value={60} color="info" variant="gradient" label={false} />
-          </MDBox>
-        ),
-      },
-      {
-        companies: <Company image={logoSlack} name="Bruno Rocha" />,
-        members: (
-          <MDBox display="flex" py={1}>
-            {avatars([
-              [team1, "Ryan Tompson"],
-              [team3, "Alexander Smith"],
-            ])}
-          </MDBox>
-        ),
-        budget: (
-          <MDTypography variant="caption" color="text" fontWeight="medium">
-            Primaria
-          </MDTypography>
-        ),
-        completion: (
-          <MDBox width="8rem" textAlign="left">
-            <MDProgress value={100} color="success" variant="gradient" label={false} />
-          </MDBox>
-        ),
-      },
-      {
-        companies: <Company image={logoSpotify} name="Raúl Abanto" />,
-        members: (
-          <MDBox display="flex" py={1}>
-            {avatars([
-              [team4, "Jessica Doe"],
-              [team3, "Alexander Smith"],
-              [team2, "Romina Hadid"],
-              [team1, "Ryan Tompson"],
-            ])}
-          </MDBox>
-        ),
-        budget: (
-          <MDTypography variant="caption" color="text" fontWeight="medium">
-            Secundaria
-          </MDTypography>
-        ),
-        completion: (
-          <MDBox width="8rem" textAlign="left">
-            <MDProgress value={100} color="success" variant="gradient" label={false} />
-          </MDBox>
-        ),
-      },
-      {
-        companies: <Company image={logoJira} name="Marquito Salas" />,
-        members: (
-          <MDBox display="flex" py={1}>
-            {avatars([[team4, "Jessica Doe"]])}
-          </MDBox>
-        ),
-        budget: (
-          <MDTypography variant="caption" color="text" fontWeight="medium">
-            Primaria
-          </MDTypography>
-        ),
-        completion: (
-          <MDBox width="8rem" textAlign="left">
-            <MDProgress value={25} color="info" variant="gradient" label={false} />
-          </MDBox>
-        ),
-      },
-    ],
+    rows: generateRows(),
+    // Función para refrescar manualmente los datos
+    refresh: fetchStudentsAtRisk,
   };
 }

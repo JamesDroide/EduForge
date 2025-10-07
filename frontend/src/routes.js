@@ -1,11 +1,7 @@
 import Dashboard from "layouts/dashboard";
-import Tables from "layouts/tables";
 import Billing from "layouts/billing";
-import RTL from "layouts/rtl";
+import IndividualAnalysis from "layouts/individual";
 import Notifications from "layouts/notifications";
-import Profile from "layouts/profile";
-import SignIn from "layouts/authentication/sign-in";
-import SignUp from "layouts/authentication/sign-up";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -15,16 +11,24 @@ const routes = [
     type: "collapse",
     name: "Reporte general",
     key: "dashboard",
-    icon: <Icon fontSize="small">Reporte General</Icon>,
-    route: "/reporte",
+    icon: <Icon fontSize="small">dashboard</Icon>,
+    route: "/dashboard",
     component: <Dashboard />,
   },
   {
     type: "collapse",
     name: "Análisis individual",
+    key: "individual",
+    icon: <Icon fontSize="small">person_search</Icon>,
+    route: "/individual",
+    component: <IndividualAnalysis />,
+  },
+  {
+    type: "collapse",
+    name: "Resultados completos",
     key: "billing",
     icon: <Icon fontSize="small">receipt_long</Icon>,
-    route: "/Analisis",
+    route: "/resultados-completos",
     component: <Billing />,
   },
   {

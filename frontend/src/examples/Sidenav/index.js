@@ -15,7 +15,6 @@ import Icon from "@mui/material/Icon";
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
 import SidenavCollapse from "examples/Sidenav/SidenavCollapse";
@@ -34,9 +33,17 @@ import {
 
 function Sidenav({ color, brand, brandName, routes, ...rest }) {
   const [controller, dispatch] = useMaterialUIController();
-  const { miniSidenav, transparentSidenav, whiteSidenav, darkMode, sidenavColor } = controller;
+  const { miniSidenav, transparentSidenav, whiteSidenav, darkMode } = controller;
   const location = useLocation();
-  const collapseName = location.pathname.replace("/", "");
+
+  // Función mejorada para detectar la ruta activa
+  const isRouteActive = (route, key) => {
+    const currentPath = location.pathname;
+    // Comparar directamente con la ruta
+    if (currentPath === route) return true;
+    // Fallback: comparar con el key si la ruta coincide parcialmente
+    return currentPath.includes(key);
+  };
 
   let textColor = "white";
 
@@ -84,13 +91,13 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
           <SidenavCollapse
             name={name}
             icon={icon}
-            active={key === collapseName}
+            active={isRouteActive(route, key)}
             noCollapse={noCollapse}
           />
         </Link>
       ) : (
         <NavLink key={key} to={route}>
-          <SidenavCollapse name={name} icon={icon} active={key === collapseName} />
+          <SidenavCollapse name={name} icon={icon} active={isRouteActive(route, key)} />
         </NavLink>
       );
     } else if (type === "title") {
