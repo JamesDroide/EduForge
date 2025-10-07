@@ -1,7 +1,0 @@
-estudiante_id,nombre,fecha,nota_final,asistencia,inasistencia,conducta
-1,Juan Perez,2025-09-01,85,95,5,positivo
-2,Ana Torres,2025-09-01,78,88,12,neutral
-3,Carlos Ruiz,2025-09-01,65,76,24,agresivo
-1,Juan Perez,2025-09-02,88,97,3,positivo
-2,Ana Torres,2025-09-02,80,90,10,neutral
-3,Carlos Ruiz,2025-09-02,70,80,20,agresivo
