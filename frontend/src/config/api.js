@@ -4,12 +4,13 @@ const getApiUrl = () => {
   let apiUrl = process.env.REACT_APP_API_URL || "https://eduforge-production.up.railway.app";
 
   // Eliminar barra extra al final (si existe)
-  if (apiUrl.endsWith('/')) {
-    apiUrl = apiUrl.slice(0, -1);  // Elimina la última barra
+  if (apiUrl.endsWith("/")) {
+    apiUrl = apiUrl.slice(0, -1); // Elimina la última barra
   }
 
+  // Si es desarrollo, usar localhost
   if (process.env.NODE_ENV !== "production") {
-    return "http://localhost:8000";  // Para desarrollo local
+    return "http://localhost:8000"; // Para desarrollo local
   }
 
   return apiUrl;
