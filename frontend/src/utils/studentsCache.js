@@ -151,7 +151,7 @@ export const useStudentsCache = () => {
     loading,
     hasValidData,
     refetch: () => fetchStudents(true),
-    invalidateCache: () => studentsCache.invalidate()
+    invalidateCache: () => studentsCache.invalidate(),
   };
 };
 
