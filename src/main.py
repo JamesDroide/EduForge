@@ -22,7 +22,12 @@ app.include_router(dashboard_risk.router, prefix="/dashboard_risk")
 # Configuración CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://*.herokuapp.com", "https://*.netlify.app", "https://*.vercel.app"],
+    allow_origins=[
+        "http://localhost:3000",  # Desarrollo local
+        "https://*.vercel.app",   # Vercel (profesional)
+        "https://*.netlify.app",  # Netlify (alternativa)
+        "https://*.up.railway.app" # Railway (backend)
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
