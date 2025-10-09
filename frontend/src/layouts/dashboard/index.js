@@ -83,6 +83,22 @@ function Dashboard() {
 
   // Función para cargar datos de asistencia
   const loadAttendanceData = () => {
+    // Verificar si hay datos válidos primero
+    if (!hasValidCsvData()) {
+      console.log("📭 No hay CSV cargado, no se cargarán datos de asistencia");
+      setBarChartData({
+        labels: ["Lun", "Mar", "Mié", "Jue", "Vie"],
+        datasets: [
+          {
+            label: "Sin datos",
+            data: [0, 0, 0, 0, 0],
+            backgroundColor: "#cccccc",
+          },
+        ],
+      });
+      return;
+    }
+
     fetch(API_ENDPOINTS.ATTENDANCE_CHART)
       .then((res) => {
         console.log("📡 Respuesta del servidor recibida:", res.status);
@@ -94,19 +110,18 @@ function Dashboard() {
         if (data.labels && data.datasets && data.datasets.length > 0) {
           console.log("✅ Datos válidos encontrados:", data.datasets.length, "datasets");
           setBarChartData({
-            labels: data.labels, // Días de semana en X
-            datasets: data.datasets, // Cada mes como serie separada
+            labels: data.labels,
+            datasets: data.datasets,
           });
         } else {
           console.log("⚠️ No se encontraron datasets válidos");
-          // Fallback a datos simples si no hay datasets
           setBarChartData({
             labels: ["Lun", "Mar", "Mié", "Jue", "Vie"],
             datasets: [
               {
                 label: "Sin datos del CSV",
                 data: [0, 0, 0, 0, 0],
-                backgroundColor: "#1f77b4",
+                backgroundColor: "#cccccc",
               },
             ],
           });
@@ -118,9 +133,9 @@ function Dashboard() {
           labels: ["Lun", "Mar", "Mié", "Jue", "Vie"],
           datasets: [
             {
-              label: "Error al cargar",
+              label: "Sin datos",
               data: [0, 0, 0, 0, 0],
-              backgroundColor: "#ff4444",
+              backgroundColor: "#cccccc",
             },
           ],
         });
@@ -129,6 +144,35 @@ function Dashboard() {
 
   // Función para cargar resumen de riesgo
   const loadRiskData = () => {
+    // Verificar si hay datos válidos primero
+    if (!hasValidCsvData()) {
+      console.log("📭 No hay CSV cargado, no se cargarán datos de riesgo");
+      setLineChartData({
+        labels: [
+          "Ene",
+          "Feb",
+          "Mar",
+          "Abr",
+          "May",
+          "Jun",
+          "Jul",
+          "Ago",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dic",
+        ],
+        datasets: {
+          label: "Sin datos",
+          data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          counts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          totals: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        },
+      });
+      setLoading(false);
+      return;
+    }
+
     fetch(API_ENDPOINTS.RISK_SUMMARY)
       .then((res) => {
         if (!res.ok) throw new Error("No se pudo obtener riesgo de deserción");
@@ -141,8 +185,8 @@ function Dashboard() {
             datasets: {
               label: "Riesgo de deserción (%)",
               data: data.data,
-              counts: data.counts || [], // Cantidades de estudiantes en riesgo
-              totals: data.totals || [], // Totales de estudiantes por mes
+              counts: data.counts || [],
+              totals: data.totals || [],
             },
           });
         } else {
