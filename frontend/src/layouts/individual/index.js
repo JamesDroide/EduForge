@@ -4,7 +4,7 @@
 =========================================================
 */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 // @mui material components
@@ -25,18 +25,10 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 
-// Images por defecto
-import logoXD from "assets/images/juancito.jpg";
-import logoSlack from "assets/images/rochita.jpg";
-import team1 from "assets/images/team-1.jpg";
-import team2 from "assets/images/team-2.jpg";
-import team3 from "assets/images/team-3.jpg";
-import team4 from "assets/images/juancito.jpg";
-import logoJira from "assets/images/marquito.jpg";
+// Imagen por defecto para estudiantes
+import defaultStudentImage from "assets/images/Estudiante.jpg";
 
 import { API_ENDPOINTS } from "../../config/api";
-
-const defaultImages = [logoXD, logoSlack, team1, team2, team3, team4, logoJira];
 
 function IndividualAnalysis() {
   const location = useLocation();
@@ -45,10 +37,10 @@ function IndividualAnalysis() {
   const [students, setStudents] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentData, setStudentData] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [riskFilter, setRiskFilter] = useState("Todos");
-  const [hasValidData, setHasValidData] = useState(false); // Nuevo estado
+  const [searchText, setSearchText] = useState(""); // Para controlar el input
+  const [hasValidData, setHasValidData] = useState(false);
 
   // Cargar lista de estudiantes al montar el componente
   useEffect(() => {
@@ -83,15 +75,8 @@ function IndividualAnalysis() {
     };
   }, []); // Solo ejecutar una vez al montar
 
-  // Efecto separado para verificar estudiante preseleccionado
-  useEffect(() => {
-    if (students.length > 0) {
-      checkPreselectedStudent();
-    }
-  }, [students.length, location.state, searchParams]);
-
   // Función separada para verificar estudiantes preseleccionados
-  const checkPreselectedStudent = () => {
+  const checkPreselectedStudent = useCallback(() => {
     // Primero verificar desde URL parameters (desde Resultados Completos)
     const studentIdFromUrl = searchParams.get("studentId");
     if (studentIdFromUrl && students.length > 0) {
@@ -133,11 +118,17 @@ function IndividualAnalysis() {
         console.error("Error parsing preselected student:", e);
       }
     }
-  };
+  }, [students, searchParams, location.state]);
+
+  // Efecto separado para verificar estudiante preseleccionado
+  useEffect(() => {
+    if (students.length > 0) {
+      checkPreselectedStudent();
+    }
+  }, [students.length, checkPreselectedStudent]);
 
   // Función para procesar los datos del estudiante (separada de handleStudentSelect)
   const processStudentData = (student) => {
-    setLoading(true);
     setError(null);
 
     try {
@@ -191,14 +182,11 @@ function IndividualAnalysis() {
     } catch (err) {
       console.error("Error procesando datos del estudiante:", err);
       setError("Error cargando datos del estudiante");
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchStudents = async () => {
     try {
-      setLoading(true);
       const response = await fetch(API_ENDPOINTS.STUDENTS_AT_RISK);
 
       if (!response.ok) {
@@ -279,8 +267,6 @@ function IndividualAnalysis() {
       console.error("Error cargando estudiantes:", err);
       setStudents([]);
       setHasValidData(false);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -288,7 +274,6 @@ function IndividualAnalysis() {
     if (!student) return;
 
     setSelectedStudent(student);
-    setLoading(true);
     setError(null);
 
     try {
@@ -353,8 +338,6 @@ function IndividualAnalysis() {
     } catch (err) {
       console.error("Error procesando datos del estudiante:", err);
       setError("Error cargando datos del estudiante");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -372,14 +355,57 @@ function IndividualAnalysis() {
   };
 
   const getRandomImage = (studentId) => {
-    return defaultImages[studentId % defaultImages.length];
+    return defaultStudentImage;
   };
 
-  // Filtrar estudiantes según el filtro de riesgo seleccionado
-  const filteredStudents = students.filter((student) => {
-    if (riskFilter === "Todos") return true;
-    return student.risk_level === riskFilter;
-  });
+  // Filtrado memoizado que se recalcula cuando cambian students, riskFilter o searchText
+  const filteredAndSearchedStudents = useMemo(() => {
+    console.log("🔍 Recalculando filtrado con:", {
+      riskFilter,
+      searchText,
+      totalStudents: students.length,
+    });
+
+    // Primero filtrar por riesgo
+    let filtered = students.filter((student) => {
+      return riskFilter === "Todos" || student.risk_level === riskFilter;
+    });
+
+    // Luego filtrar por texto de búsqueda si hay texto
+    if (searchText && searchText.trim().length > 0) {
+      const searchValue = searchText.toLowerCase().trim();
+      filtered = filtered.filter((student) => {
+        const nameMatch = student.name.toLowerCase().includes(searchValue);
+        const idMatch = student.student_id?.toString().includes(searchValue);
+        return nameMatch || idMatch;
+      });
+      console.log(`📝 Filtrado por "${searchText}": ${filtered.length} resultados`);
+    }
+
+    return filtered;
+  }, [students, riskFilter, searchText]);
+
+  // Función para manejar el cambio en el input del Autocomplete
+  const handleInputChange = useCallback((event, newInputValue, reason) => {
+    console.log("🎯 Input change:", { newInputValue, reason });
+
+    // Solo actualizar si el cambio es por typing del usuario
+    if (reason === "input") {
+      setSearchText(newInputValue || "");
+    }
+
+    // Si se limpia el input, también limpiar nuestro estado
+    if (reason === "clear") {
+      setSearchText("");
+    }
+  }, []);
+
+  // Función para limpiar la búsqueda cuando cambie el filtro de riesgo
+  const handleRiskFilterChange = useCallback((newFilter) => {
+    console.log("🔄 Cambiando filtro de riesgo:", newFilter);
+    setRiskFilter(newFilter);
+    setSearchText(""); // Limpiar búsqueda al cambiar filtro
+  }, []);
 
   return (
     <DashboardLayout>
@@ -437,7 +463,7 @@ function IndividualAnalysis() {
                           variant={riskFilter === "Todos" ? "contained" : "outlined"}
                           color="primary"
                           size="small"
-                          onClick={() => setRiskFilter("Todos")}
+                          onClick={() => handleRiskFilterChange("Todos")}
                         >
                           Todos ({students.length})
                         </MDButton>
@@ -447,7 +473,7 @@ function IndividualAnalysis() {
                           variant={riskFilter === "Alto" ? "contained" : "outlined"}
                           color="error"
                           size="small"
-                          onClick={() => setRiskFilter("Alto")}
+                          onClick={() => handleRiskFilterChange("Alto")}
                         >
                           Alto Riesgo ({students.filter((s) => s.risk_level === "Alto").length})
                         </MDButton>
@@ -457,7 +483,7 @@ function IndividualAnalysis() {
                           variant={riskFilter === "Medio" ? "contained" : "outlined"}
                           color="warning"
                           size="small"
-                          onClick={() => setRiskFilter("Medio")}
+                          onClick={() => handleRiskFilterChange("Medio")}
                         >
                           Medio Riesgo ({students.filter((s) => s.risk_level === "Medio").length})
                         </MDButton>
@@ -467,7 +493,7 @@ function IndividualAnalysis() {
                           variant={riskFilter === "Bajo" ? "contained" : "outlined"}
                           color="success"
                           size="small"
-                          onClick={() => setRiskFilter("Bajo")}
+                          onClick={() => handleRiskFilterChange("Bajo")}
                         >
                           Bajo Riesgo ({students.filter((s) => s.risk_level === "Bajo").length})
                         </MDButton>
@@ -476,21 +502,27 @@ function IndividualAnalysis() {
                   </MDBox>
 
                   <Autocomplete
-                    options={filteredStudents}
+                    key={`${riskFilter}-${students.length}`} // Forzar re-render cuando cambien los datos
+                    options={filteredAndSearchedStudents}
                     getOptionLabel={(option) => `${option.name} (ID: ${option.student_id})`}
                     onChange={handleStudentSelect}
-                    key={riskFilter} // Forzar re-render cuando cambie el filtro
+                    onInputChange={handleInputChange}
+                    inputValue={searchText}
+                    noOptionsText={
+                      searchText
+                        ? `No se encontraron estudiantes que coincidan con "${searchText}"`
+                        : "No hay estudiantes disponibles"
+                    }
                     renderInput={(params) => (
                       <TextField
-                        // eslint-disable-next-line react/jsx-props-no-spreading
                         {...params}
-                        label={`Buscar estudiante por nombre o ID (${filteredStudents.length} estudiantes)`}
+                        label={`Buscar estudiante por nombre o ID (${filteredAndSearchedStudents.length} estudiantes)`}
                         variant="outlined"
                         fullWidth
+                        placeholder="Escribe el nombre o ID del estudiante..."
                       />
                     )}
                     renderOption={(props, option) => (
-                      // eslint-disable-next-line react/jsx-props-no-spreading
                       <li {...props}>
                         <MDBox display="flex" alignItems="center">
                           <MDAvatar
@@ -513,6 +545,13 @@ function IndividualAnalysis() {
                         </MDBox>
                       </li>
                     )}
+                    // Configuraciones adicionales para mejor control
+                    clearOnEscape
+                    disableCloseOnSelect={false}
+                    blurOnSelect
+                    selectOnFocus
+                    clearOnBlur
+                    handleHomeEndKeys
                   />
                 </MDBox>
               </Card>
@@ -625,12 +664,30 @@ function IndividualAnalysis() {
                             >
                               <MDBox
                                 sx={{
-                                  width:
-                                    factor.impacto === "Alto"
-                                      ? "100%"
-                                      : factor.impacto === "Medio"
-                                      ? "60%"
-                                      : "30%",
+                                  width: (() => {
+                                    // Calcular el ancho dinámicamente según el factor y su valor
+                                    if (factor.factor === "Asistencia") {
+                                      // Para asistencia: usar el porcentaje directamente
+                                      const asistenciaValue = parseFloat(
+                                        factor.valor.replace("%", "")
+                                      );
+                                      return `${Math.min(100, Math.max(0, asistenciaValue))}%`;
+                                    } else if (factor.factor === "Notas") {
+                                      // Para notas: convertir de escala 0-20 a porcentaje 0-100
+                                      const notaValue = parseFloat(factor.valor.split("/")[0]);
+                                      const porcentaje = (notaValue / 20) * 100;
+                                      return `${Math.min(100, Math.max(0, porcentaje))}%`;
+                                    } else if (factor.factor === "Conducta") {
+                                      // Para conducta: mapear valores cualitativos a porcentajes
+                                      const conductaValue = factor.valor.toLowerCase();
+                                      if (conductaValue === "mala") return "25%";
+                                      if (conductaValue === "regular") return "50%";
+                                      if (conductaValue === "buena") return "75%";
+                                      if (conductaValue === "excelente") return "100%";
+                                      return "50%"; // valor por defecto para "Regular"
+                                    }
+                                    return "50%"; // fallback
+                                  })(),
                                   height: "100%",
                                   backgroundColor:
                                     factor.impacto === "Alto"
@@ -648,9 +705,11 @@ function IndividualAnalysis() {
                                   top: "50%",
                                   left: "50%",
                                   transform: "translate(-50%, -50%)",
-                                  color: "white",
+                                  color: "#ffffff",
                                   fontWeight: "bold",
-                                  fontSize: "10px",
+                                  fontSize: "11px",
+                                  textShadow: "2px 2px 4px rgba(0,0,0,0.9)",
+                                  zIndex: 10,
                                 }}
                               >
                                 {factor.valor}

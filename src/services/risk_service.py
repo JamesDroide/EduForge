@@ -4,89 +4,63 @@ from sqlalchemy.orm import Session
 from config import SessionLocal
 from models import ResultadoPrediccion
 
-# Variable global para almacenar los últimos resultados de predicción del CSV
+# Variable global para almacenar los últimos resultados de predicción del CSV (mantener para compatibilidad)
 latest_predictions = []
 
 class RiskService:
 
     def __init__(self):
-        # Cargar el modelo de predicción
-        # self.model = PredictionModel(model_path="path_to_your_model.pkl")  # Ajusta la ruta de tu modelo
-        # Comentado porque PredictionModel no está definido
         pass
 
     def get_students_at_risk(self):
         """
-        Función para obtener TODOS los estudiantes con sus niveles de riesgo (incluyendo Bajo, Medio y Alto)
+        Función para obtener TODOS los estudiantes con sus niveles de riesgo desde la BASE DE DATOS
         """
-        global latest_predictions
-
-        print(f"🔍 DEBUG: get_students_at_risk llamado")
-        print(f"🔍 DEBUG: latest_predictions tiene {len(latest_predictions)} elementos")
-
-        if len(latest_predictions) > 0:
-            print(f"🔍 DEBUG: Primeros 3 elementos de latest_predictions:")
-            for i, pred in enumerate(latest_predictions[:3]):
-                print(f"  {i}: {pred}")
-
-        # Si tenemos datos frescos del CSV, usarlos
-        if latest_predictions:
-            all_students = []
-            for prediction in latest_predictions:
-                # INCLUIR TODOS LOS ESTUDIANTES independientemente del nivel de riesgo
-                risk_level = prediction.get("riesgo_desercion", "Bajo")
-
-                # Extraer los valores correctos con múltiples nombres posibles
-                nota_value = prediction.get("nota_final", prediction.get("nota", 0))
-                asistencia_value = prediction.get("asistencia", 0)
-
-                print(f"🔍 DEBUG: Procesando estudiante {prediction.get('nombre', 'N/A')}: nota={nota_value}, asistencia={asistencia_value}")
-
-                all_students.append({
-                    "student_id": prediction.get("id_estudiante"),
-                    "name": prediction.get("nombre", f"Estudiante {prediction.get('id_estudiante')}"),
-                    "grade": "Primaria" if prediction.get("id_estudiante", 0) < 1000 else "Secundaria",
-                    "risk_level": risk_level,
-                    "nota": float(nota_value),  # Asegurar que sea float
-                    "nota_final": float(nota_value),  # Para compatibilidad
-                    "asistencia": float(asistencia_value),  # Asegurar que sea float
-                    "conducta": prediction.get("conducta", "Regular"),
-                    "inasistencia": prediction.get("inasistencia", 0)
-                })
-
-            print(f"🔍 DEBUG: Devolviendo {len(all_students)} estudiantes")
-            if len(all_students) > 0:
-                print(f"🔍 DEBUG: Primer estudiante a devolver: {all_students[0]}")
-
-            return all_students
-
-        # Si no hay datos del CSV, intentar usar la base de datos (fallback)
         db = SessionLocal()
         try:
-            # Obtener todos los resultados de predicción
+            # Leer desde la base de datos
             results = db.query(ResultadoPrediccion).all()
 
-            # Si no hay datos, devolver lista vacía
+            print(f"🔍 DEBUG: get_students_at_risk - {len(results)} registros encontrados en BD")
+
+            # Si no hay datos en BD, devolver lista vacía
             if not results:
+                print("📭 No hay datos en la base de datos")
                 return []
 
             all_students = []
 
             for result in results:
-                # Determinar el nivel de riesgo basado en la predicción
-                risk_level = "Alto" if int(result.resultado_prediccion) == 1 else "Bajo"
+                # Extraer los valores con manejo de None
+                nota_value = result.nota_final  # Solo leer nota_final
+                asistencia_value = result.asistencia if result.asistencia is not None else 0
+                conducta_value = result.conducta if result.conducta is not None else "Regular"
 
-                # INCLUIR TODOS LOS ESTUDIANTES (no solo los de alto riesgo)
+                print(f"🔍 DEBUG: Procesando estudiante {result.nombre}: nota={nota_value}, asistencia={asistencia_value}, riesgo={result.riesgo_desercion}")
+
                 all_students.append({
                     "student_id": result.id_estudiante,
-                    "name": f"Estudiante {result.id_estudiante}",  # Placeholder para el nombre
+                    "name": result.nombre if result.nombre else f"Estudiante {result.id_estudiante}",
                     "grade": "Primaria" if result.id_estudiante < 1000 else "Secundaria",
-                    "risk_level": risk_level,
-                    "nota": result.nota,
-                    "asistencia": result.asistencia,
-                    "conducta": "Regular"  # Valor por defecto
+                    "risk_level": result.riesgo_desercion if result.riesgo_desercion else "Bajo",
+                    "nota": float(nota_value),  # Mantener por compatibilidad
+                    "nota_final": float(nota_value),
+                    "asistencia": float(asistencia_value),
+                    "conducta": conducta_value,
+                    "inasistencia": float(result.inasistencia) if result.inasistencia else 0,
+                    "probabilidad_desercion": float(result.probabilidad_desercion) if result.probabilidad_desercion else 0,
+                    "resultado_prediccion": result.resultado_prediccion
                 })
+
+            print(f"🔍 DEBUG: Devolviendo {len(all_students)} estudiantes desde BD")
+            if len(all_students) > 0:
+                print(f"🔍 DEBUG: Primer estudiante: {all_students[0]}")
+
             return all_students
+
+        except Exception as e:
+            print(f"❌ Error leyendo desde BD: {e}")
+            return []
         finally:
             db.close()
 

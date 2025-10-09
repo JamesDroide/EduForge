@@ -36,6 +36,7 @@ import team4 from "assets/images/juancito.jpg";
 
 // Array de imágenes por defecto para rotar entre estudiantes
 const defaultImages = [logoXD, logoSlack, team1, team2, team3, team4, logoJira];
+const defaultStudentImage = logoXD; // Imagen por defecto única
 
 export default function data() {
   const [studentsAtRisk, setStudentsAtRisk] = useState([]);
@@ -153,12 +154,9 @@ export default function data() {
       return [];
     }
 
-    return highRiskStudents.map((student, index) => {
-      // Asignar imagen por defecto rotando entre las disponibles
-      const defaultImage = defaultImages[index % defaultImages.length];
-
+    return highRiskStudents.map((student) => {
       return {
-        companies: <Company image={defaultImage} name={student.name} />,
+        companies: <Company image={defaultStudentImage} name={student.name} />,
         budget: (
           <MDTypography color="error" fontWeight="bold">
             {student.risk_level}

@@ -10,6 +10,11 @@ import os
 from api.routes import dashboard_attendance, dashboard_risk
 from config import Base, engine, SessionLocal
 from models import ResultadoPrediccion
+
+# Ejecutar migraciones automáticas al iniciar
+from migrations.auto_migrate import run_migrations
+run_migrations()
+
 # Crear todas las tablas en la base de datos
 Base.metadata.create_all(engine)
 
@@ -128,11 +133,16 @@ async def get_resultados_prediccion():
             {
                 "id": r.id,
                 "id_estudiante": r.id_estudiante,
-                "nota": r.nota,
+                "nombre": r.nombre,
+                "nota": r.nota_final,  # Mantener 'nota' por compatibilidad con frontend
+                "nota_final": r.nota_final,
                 "conducta": r.conducta,
                 "asistencia": r.asistencia,
+                "inasistencia": r.inasistencia,
                 "tiempo_prediccion": r.tiempo_prediccion,
                 "resultado_prediccion": r.resultado_prediccion,
+                "riesgo_desercion": r.riesgo_desercion,
+                "probabilidad_desercion": r.probabilidad_desercion,
                 "fecha": r.fecha.strftime('%Y-%m-%d %H:%M:%S') if r.fecha else None
             }
             for r in resultados

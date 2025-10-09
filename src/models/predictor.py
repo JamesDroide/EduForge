@@ -147,6 +147,15 @@ def predict_desertion(file_path: str) -> List[Dict]:
 
         logger.info(f"💾 Procesando {len(df)} registros con modelo ajustado...")
 
+        # Limpiar registros anteriores para evitar duplicados
+        try:
+            session.query(ResultadoPrediccion).delete()
+            session.commit()
+            logger.info("🗑️ Registros anteriores eliminados")
+        except Exception as e:
+            logger.warning(f"⚠️ Error limpiando registros anteriores: {e}")
+            session.rollback()
+
         for idx, row in df.iterrows():
             # Obtener predicciones
             prediccion = int(y_pred[idx])
@@ -208,20 +217,38 @@ def predict_desertion(file_path: str) -> List[Dict]:
             # Obtener los valores reales del CSV con logging para debug
             nota_final_value = float(row.get('nota_final', 0))
             asistencia_value = float(row.get('asistencia', 0))
+            inasistencia_value = float(row.get('inasistencia', 0))
+            conducta_value = str(row.get('conducta', 'Regular'))
 
             # Log para debug - verificar que los valores se están leyendo correctamente
             if idx < 3:  # Solo para las primeras 3 filas
                 logger.info(f"📊 Fila {idx}: nota_final={nota_final_value}, asistencia={asistencia_value}")
 
+            # Guardar en la base de datos
+            resultado_bd = ResultadoPrediccion(
+                id_estudiante=estudiante_id,
+                nombre=nombre,
+                nota=nota_final_value,  # Guardar en ambas columnas
+                nota_final=nota_final_value,
+                conducta=conducta_value,
+                asistencia=asistencia_value,
+                inasistencia=inasistencia_value,
+                tiempo_prediccion=tiempo_prediccion,
+                resultado_prediccion=str(prediccion),
+                riesgo_desercion=riesgo,
+                probabilidad_desercion=round(probabilidad, 4)
+            )
+            session.add(resultado_bd)
+
             # Preparar resultado para retorno
             resultado_dict = {
                 "id_estudiante": estudiante_id,
                 "nombre": nombre,
-                "nota_final": nota_final_value,  # Usar el valor real del CSV
-                "nota": nota_final_value,        # Para compatibilidad
-                "asistencia": asistencia_value,  # Usar el valor real del CSV
-                "inasistencia": float(row.get('inasistencia', 0)),
-                "conducta": str(row.get('conducta', 'Regular')),
+                "nota_final": nota_final_value,
+                "nota": nota_final_value,  # Mantener por compatibilidad con frontend
+                "asistencia": asistencia_value,
+                "inasistencia": inasistencia_value,
+                "conducta": conducta_value,
                 "fecha": fecha_formateada,
                 "tiempo_prediccion": tiempo_prediccion,
                 "resultado_prediccion": str(prediccion),
@@ -230,8 +257,15 @@ def predict_desertion(file_path: str) -> List[Dict]:
             }
             resultados.append(resultado_dict)
 
-        session.commit()
-        session.close()
+        # Commit todos los registros de una vez
+        try:
+            session.commit()
+            logger.info(f"✅ {len(resultados)} registros guardados en la base de datos")
+        except Exception as e:
+            logger.error(f"❌ Error guardando en BD: {e}")
+            session.rollback()
+        finally:
+            session.close()
 
         # Estadísticas de resultados
         alto_riesgo = sum(1 for r in resultados if r['riesgo_desercion'] == 'Alto')

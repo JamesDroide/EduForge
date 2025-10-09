@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { API_ENDPOINTS } from "../config/api";
 
 // Cache global para datos de estudiantes
@@ -116,6 +116,7 @@ export const useStudentsCache = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasValidData, setHasValidData] = useState(false);
+  const [lastUploadTimestamp, setLastUploadTimestamp] = useState(null);
 
   const fetchStudents = async (forceRefresh = false) => {
     setLoading(true);
@@ -138,20 +139,52 @@ export const useStudentsCache = () => {
     // Escuchar cambios en localStorage
     const handleStorageChange = (e) => {
       if (e.key === "latest_predictions" || e.key === "csv_uploaded") {
-        fetchStudents(true); // Forzar refresh
+        console.log("🔄 Detectado cambio en localStorage, invalidando caché...");
+        studentsCache.invalidate(); // Invalidar caché antes de recargar
+        fetchStudents(true); // Forzar refresh completo
       }
     };
 
+    // Escuchar eventos personalizados para invalidación inmediata
+    const handleCsvUploaded = (event) => {
+      console.log("🆕 Nuevo CSV detectado, actualizando datos...");
+      studentsCache.invalidate();
+      fetchStudents(true);
+    };
+
+    // Verificar cambios en el timestamp de upload periódicamente
+    const checkForUpdates = () => {
+      const currentTimestamp = localStorage.getItem("csv_upload_timestamp");
+      if (currentTimestamp && currentTimestamp !== lastUploadTimestamp) {
+        console.log("📅 Timestamp de CSV actualizado, recargando datos...");
+        setLastUploadTimestamp(currentTimestamp);
+        studentsCache.invalidate();
+        fetchStudents(true);
+      }
+    };
+
+    // Verificar updates cada 2 segundos
+    const intervalId = setInterval(checkForUpdates, 2000);
+
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, []);
+    window.addEventListener("csvUploaded", handleCsvUploaded);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("csvUploaded", handleCsvUploaded);
+      clearInterval(intervalId);
+    };
+  }, [lastUploadTimestamp]);
 
   return {
     students,
     loading,
     hasValidData,
-    refetch: () => fetchStudents(true),
-    invalidateCache: () => studentsCache.invalidate(),
+    refresh: () => {
+      console.log("🔄 Refresh manual solicitado");
+      studentsCache.invalidate();
+      fetchStudents(true);
+    },
   };
 };
 
