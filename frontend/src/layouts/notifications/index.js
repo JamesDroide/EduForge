@@ -17,7 +17,7 @@ import MDButton from "components/MDButton";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-import { API_ENDPOINTS, API_BASE_URL } from "../../config/api";
+import { API_ENDPOINTS } from "../../config/api";
 
 function UploadData() {
   const [fileData, setFileData] = useState([]);
@@ -125,7 +125,7 @@ function UploadData() {
       const cleanFilename = uploadResult.filename.trim();
       console.log("Filename limpio:", cleanFilename);
       const predictRes = await fetch(
-        `${API_BASE_URL}/predict?filename=${encodeURIComponent(cleanFilename)}`,
+        `${API_ENDPOINTS.PREDICT}?filename=${encodeURIComponent(cleanFilename)}`,
         {
           method: "POST",
           headers: {

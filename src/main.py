@@ -25,10 +25,13 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",  # Desarrollo local
         "https://eduforge-git-main-jamesdroides-projects.vercel.app",  # Dominio exacto de Vercel
-        "https://eduforge-production.up.railway.app"  # Railway backend
+        "https://eduforge-wheat.vercel.app",  # Nuevo dominio de Vercel
+        "https://eduforge-production.up.railway.app",  # Railway backend
+        "https://*.vercel.app",  # Cualquier subdominio de Vercel
+        "https://eduforge.vercel.app"  # Dominio principal si lo tienes
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 @app.get("/")
