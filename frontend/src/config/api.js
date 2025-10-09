@@ -5,7 +5,7 @@ const getApiUrl = () => {
 
   // Eliminar barra extra al final (si existe)
   if (apiUrl.endsWith("/")) {
-    apiUrl = apiUrl.slice(0, -1); // Elimina la última barra
+    apiUrl = apiUrl.slice(0, -1);
   }
 
   // Si es desarrollo, usar localhost
