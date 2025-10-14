@@ -13,6 +13,12 @@ from models import ResultadoPrediccion
 # Variable global para almacenar los datos más recientes del CSV
 latest_csv_data = None
 
+def clear_latest_csv_data():
+    """Limpia la variable global de datos del CSV"""
+    global latest_csv_data
+    latest_csv_data = None
+    print("🧹 Variable global latest_csv_data limpiada")
+
 class AttendanceService:
 
     def get_attendance_data_from_csv(self):
@@ -21,72 +27,33 @@ class AttendanceService:
         """
         global latest_csv_data
 
-        # Usar los datos globales del CSV si están disponibles
-        if latest_csv_data and len(latest_csv_data) > 0:
-            # Convertir a DataFrame para procesamiento
-            df = pd.DataFrame(latest_csv_data)
+        # ✅ CORRECCIÓN: Solo usar la variable global, NO leer de BD
+        if not latest_csv_data or len(latest_csv_data) == 0:
+            print("📭 No hay datos de asistencia cargados en esta sesión")
+            return None
 
-            # Asegurar que tenemos las columnas necesarias
-            if 'fecha' not in df.columns or 'asistencia' not in df.columns:
-                return None
+        # Convertir a DataFrame para procesamiento
+        df = pd.DataFrame(latest_csv_data)
 
-            # Convertir fechas a datetime
-            df['fecha_dt'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d', errors='coerce')
+        # Asegurar que tenemos las columnas necesarias
+        if 'fecha' not in df.columns or 'asistencia' not in df.columns:
+            return None
 
-            # Filtrar filas con fechas válidas
-            df = df.dropna(subset=['fecha_dt'])
+        # Convertir fechas a datetime
+        df['fecha_dt'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d', errors='coerce')
 
-            if df.empty:
-                return None
+        # Filtrar filas con fechas válidas
+        df = df.dropna(subset=['fecha_dt'])
 
-            # Agregar día de la semana y mes
-            df['dia_semana'] = df['fecha_dt'].dt.day_name()
-            df['mes'] = df['fecha_dt'].dt.strftime('%b')
-            df['año_mes'] = df['fecha_dt'].dt.strftime('%Y-%m')
+        if df.empty:
+            return None
 
-            return df
+        # Agregar día de la semana y mes
+        df['dia_semana'] = df['fecha_dt'].dt.day_name()
+        df['mes'] = df['fecha_dt'].dt.strftime('%b')
+        df['año_mes'] = df['fecha_dt'].dt.strftime('%Y-%m')
 
-        # Fallback: intentar obtener de la base de datos
-        db = SessionLocal()
-        try:
-            # Obtener todos los registros de ResultadoPrediccion
-            results = db.query(ResultadoPrediccion).all()
-
-            if not results:
-                return None
-
-            # Convertir a DataFrame para procesamiento
-            data = []
-            for r in results:
-                if r.fecha:
-                    data.append({
-                        'fecha': r.fecha.strftime('%Y-%m-%d'),
-                        'asistencia': r.asistencia,
-                        'id_estudiante': r.id_estudiante
-                    })
-
-            if not data:
-                return None
-
-            df = pd.DataFrame(data)
-
-            # Convertir fechas a datetime
-            df['fecha_dt'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d', errors='coerce')
-
-            # Filtrar filas con fechas válidas
-            df = df.dropna(subset=['fecha_dt'])
-
-            if df.empty:
-                return None
-
-            # Agregar día de la semana y mes
-            df['dia_semana'] = df['fecha_dt'].dt.day_name()
-            df['mes'] = df['fecha_dt'].dt.strftime('%b')
-            df['año_mes'] = df['fecha_dt'].dt.strftime('%Y-%m')
-
-            return df
-        finally:
-            db.close()
+        return df
 
     def get_weekly_attendance_summary(self):
         """

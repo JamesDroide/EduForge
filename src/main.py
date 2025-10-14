@@ -2,8 +2,8 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from upload import save_uploaded_file, clear_previous_data
 from models.predictor import predict_desertion
-from services.risk_service import update_latest_predictions, clear_latest_predictions  # Importar clear
-from services.attendance_service import update_attendance_data  # Restaurar import
+from services.risk_service import update_latest_predictions, clear_latest_predictions
+from services.attendance_service import update_attendance_data, clear_latest_csv_data  # Importar clear
 from fastapi.responses import JSONResponse
 import pandas as pd
 import os
@@ -21,6 +21,7 @@ Base.metadata.create_all(engine)
 # ✅ CORRECCIÓN: Limpiar variables globales al iniciar el servidor
 # Esto asegura que no se muestren datos viejos de la BD hasta que se cargue un CSV
 clear_latest_predictions()
+clear_latest_csv_data()  # También limpiar datos de asistencia
 print("🔄 Servidor iniciado - Variables globales limpiadas")
 
 app = FastAPI()
