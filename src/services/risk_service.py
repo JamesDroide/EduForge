@@ -7,6 +7,12 @@ from models import ResultadoPrediccion
 # Variable global para almacenar los últimos resultados de predicción del CSV (mantener para compatibilidad)
 latest_predictions = []
 
+def clear_latest_predictions():
+    """Limpia la variable global de predicciones"""
+    global latest_predictions
+    latest_predictions = []
+    print("🧹 Variable global latest_predictions limpiada")
+
 class RiskService:
 
     def __init__(self):
@@ -16,6 +22,14 @@ class RiskService:
         """
         Función para obtener TODOS los estudiantes con sus niveles de riesgo desde la BASE DE DATOS
         """
+        global latest_predictions
+
+        # ✅ CORRECCIÓN: Si no hay datos en la variable global, NO mostrar datos de BD
+        # Esto evita que muestre datos viejos al iniciar la app sin haber cargado CSV
+        if not latest_predictions or len(latest_predictions) == 0:
+            print("📭 No hay predicciones cargadas en esta sesión")
+            return []
+
         db = SessionLocal()
         try:
             # Leer desde la base de datos

@@ -93,6 +93,13 @@ class AttendanceService:
         Devuelve la suma de asistencia por día de la semana para todos los estudiantes.
         Retorna un diccionario con labels y data para el gráfico del dashboard.
         """
+        global latest_csv_data
+
+        # ✅ CORRECCIÓN: Si no hay datos en la variable global, devolver vacío
+        if not latest_csv_data or len(latest_csv_data) == 0:
+            print("📭 No hay datos de asistencia cargados en esta sesión")
+            return {"labels": ["L", "M", "M", "J", "V", "S", "D"], "data": [0, 0, 0, 0, 0, 0, 0]}
+
         db = SessionLocal()
         try:
             # Obtener todos los registros de ResultadoPrediccion
