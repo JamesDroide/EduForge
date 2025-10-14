@@ -213,7 +213,7 @@ grep -c "💡 MEJORA" CODIGO_REVIEW.md
 ```bash
 # 1. Crear archivo de variables de entorno
 cat > .env << EOF
-DATABASE_URL=postgresql://user:password@localhost:5432/eduforge
+DATABASE_URL=postgresql://your-username-here:your-password-here@localhost:5432/eduforge
 SECRET_KEY=$(openssl rand -hex 32)
 ALLOWED_ORIGINS=http://localhost:3000
 ENVIRONMENT=development
@@ -222,10 +222,10 @@ EOF
 # 2. Agregar .env a .gitignore
 echo ".env" >> .gitignore
 
-# 3. Crear .env.example
+# 3. Crear .env.example (plantilla para otros desarrolladores)
 cat > .env.example << EOF
-DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-SECRET_KEY=your-secret-key-here
+DATABASE_URL=postgresql://your-username-here:your-password-here@localhost:5432/eduforge
+SECRET_KEY=generate-with-openssl-rand-hex-32
 ALLOWED_ORIGINS=http://localhost:3000
 ENVIRONMENT=development
 EOF
