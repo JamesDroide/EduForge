@@ -193,22 +193,35 @@ async def create_user_admin(
         db.add(new_user)
 
         logger.info(f"🔵 Ejecutando flush...")
-        db.flush()  # Forzar escritura a BD antes del commit
+        db.flush()
         logger.info(f"✅ Flush exitoso - Usuario tiene ID: {new_user.id}")
 
         logger.info(f"🔵 Ejecutando commit...")
         db.commit()
         logger.info(f"✅ Commit exitoso")
 
-        # CRÍTICO: Esperar que Railway propague el cambio
-        logger.info(f"⏳ Esperando propagación en Railway (100ms)...")
-        time.sleep(0.1)  # 100ms de delay
+        # CRÍTICO PARA RAILWAY: Forzar que la conexión persista el cambio
+        logger.info(f"🔵 Forzando persist con execute...")
+        db.execute(text("SELECT 1"))  # Forzar que la conexión confirme
+
+        logger.info(f"⏳ Esperando propagación en Railway (200ms)...")
+        time.sleep(0.2)  # Aumentar a 200ms
 
         # VERIFICACIÓN CRÍTICA 1: Usar SQL directo en la MISMA sesión
         logger.info(f"🔵 Verificación SQL directa en sesión actual...")
         result = db.execute(text(f"SELECT COUNT(*) FROM usuarios WHERE id = {new_user.id}"))
         count = result.scalar()
         logger.info(f"✅ SQL en sesión actual: {count} registro(s)")
+
+        if count == 0:
+            logger.error(f"❌ CRÍTICO: COUNT es 0 en la misma sesión después del commit!")
+            # Intentar commit adicional
+            db.commit()
+            logger.info(f"🔵 Commit adicional ejecutado")
+            time.sleep(0.1)
+            result = db.execute(text(f"SELECT COUNT(*) FROM usuarios WHERE id = {new_user.id}"))
+            count = result.scalar()
+            logger.info(f"🔵 Verificación después de 2do commit: {count} registro(s)")
 
         # VERIFICACIÓN CRÍTICA 2: Usar una nueva sesión INDEPENDIENTE
         logger.info(f"🔵 Verificando persistencia con nueva sesión...")

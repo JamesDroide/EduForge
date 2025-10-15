@@ -1,6 +1,6 @@
 # src/config.py
 import os
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, event
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import OperationalError
 import logging
@@ -20,31 +20,42 @@ if DATABASE_URL:
 else:
     logger.warning("⚠️ DATABASE_URL no configurada, usando default local")
 
+# Detectar si estamos en Railway
+IS_RAILWAY = 'rlwy.net' in DATABASE_URL or 'railway' in DATABASE_URL.lower()
+if IS_RAILWAY:
+    logger.info("🚂 Railway detectado - Aplicando configuraciones especiales")
+
 # Crear el engine de SQLAlchemy para conectar con PostgreSQL
 # Con configuraciones robustas para producción
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,  # Verifica conexiones antes de usarlas
-    pool_recycle=3600,   # Recicla conexiones cada hora
-    pool_size=5,         # Tamaño del pool de conexiones
-    max_overflow=10,     # Conexiones extras permitidas
+    pool_recycle=300 if IS_RAILWAY else 3600,   # Recicla más rápido en Railway
+    pool_size=3 if IS_RAILWAY else 5,         # Pool más pequeño en Railway
+    max_overflow=5 if IS_RAILWAY else 10,     # Conexiones extras permitidas
     echo=False,          # No imprimir queries SQL (cambiar a True para debug)
     connect_args={
         "connect_timeout": 10,
         "options": "-c timezone=utc"
     },
     # CRÍTICO para Railway: Forzar commit inmediato
-    isolation_level="READ COMMITTED"
+    isolation_level="AUTOCOMMIT" if IS_RAILWAY else "READ COMMITTED"
 )
 
 # Crear la sesión de base de datos
 # expire_on_commit=False evita que los objetos expiren después del commit
 SessionLocal = sessionmaker(
     autocommit=False,
-    autoflush=False,
+    autoflush=True if IS_RAILWAY else False,  # Autoflush en Railway
     bind=engine,
     expire_on_commit=False  # ← CRÍTICO: Mantiene objetos accesibles después del commit
 )
+
+# Event listener para Railway: Forzar commit después de cada flush
+if IS_RAILWAY:
+    @event.listens_for(SessionLocal, "after_flush")
+    def receive_after_flush(session, flush_context):
+        logger.debug("🔵 After flush - forzando persist en Railway")
 
 # Declarar la base para los modelos
 Base = declarative_base()
