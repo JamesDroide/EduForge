@@ -66,24 +66,27 @@ async def save_uploaded_file(file: UploadFile):
     if file.filename.endswith('.csv'):
         df = pd.read_csv(file_path)
         session = SessionLocal()
-        try:
-            for _, row in df.iterrows():
-                student = StudentData(
-                    id_estudiante=int(row.get('estudiante_id', row.get('id', 0))),
-                    nombre=str(row.get('nombre', '')),
-                    nota_final=float(row.get('nota_final', 0)),
-                    asistencia=float(row.get('asistencia', 0)),
-                    inasistencia=float(row.get('inasistencia', 0)),
-                    conducta=str(row.get('conducta', ''))
-                )
-                session.add(student)
-            session.commit()
-            print(f"✅ Se guardaron {len(df)} estudiantes en la base de datos")
-        except Exception as e:
-            session.rollback()
-            print(f"❌ Error guardando estudiantes: {str(e)}")
-            raise e
-        finally:
-            session.close()
+        for _, row in df.iterrows():
+            # Convertir fecha si es numérica
+            fecha_val = row.get('fecha', '2025-01-01')
+            if isinstance(fecha_val, (float, int)) or (isinstance(fecha_val, str) and fecha_val.replace('.', '', 1).isdigit()):
+                fecha_str = excel_date_to_str(fecha_val)
+            else:
+                fecha_str = str(fecha_val)
+            try:
+                fecha_dt = datetime.strptime(fecha_str, '%Y-%m-%d')
+            except Exception:
+                fecha_dt = datetime(2025, 1, 1)
+            student = StudentData(
+                estudiante_id=int(row.get('estudiante_id', row.get('id', 0))),
+                nombre=str(row.get('nombre', '')),
+                fecha=fecha_dt,
+                asistencia=float(row.get('asistencia', 0)),
+                inasistencia=float(row.get('inasistencia', 0)),
+                conducta=str(row.get('conducta', ''))
+            )
+            session.add(student)
+        session.commit()
+        session.close()
 
     return file_path
