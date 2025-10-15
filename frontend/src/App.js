@@ -53,7 +53,6 @@ import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "co
 import brandWhite from "assets/images/logo-ct.png";
 import brandDark from "assets/images/logo-ct-dark.png";
 import Billing from "layouts/billing";
-import Notifications from "layouts/notifications";
 import UploadData from "layouts/notifications";
 
 // Auth Provider

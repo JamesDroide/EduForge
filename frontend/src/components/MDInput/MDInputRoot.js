@@ -21,7 +21,7 @@ export default styled(TextField)(({ theme, ownerState }) => {
   const { palette, functions } = theme;
   const { error, success, disabled } = ownerState;
 
-  const { grey, transparent, error: colorError, success: colorSuccess } = palette;
+  const { grey, transparent, error: colorError, success: colorSuccess, mode } = palette;
   const { pxToRem } = functions;
 
   // styles for the input with error={true}
@@ -63,9 +63,25 @@ export default styled(TextField)(({ theme, ownerState }) => {
   });
 
   return {
-    backgroundColor: disabled ? `${grey[200]} !important` : transparent.main,
+    backgroundColor: disabled
+      ? mode === "dark"
+        ? "rgba(255, 255, 255, 0.05) !important"
+        : `${grey[200]} !important`
+      : transparent.main,
     pointerEvents: disabled ? "none" : "auto",
     ...(error && errorStyles()),
     ...(success && successStyles()),
+
+    // Estilos adicionales para modo oscuro en campos deshabilitados
+    ...(disabled &&
+      mode === "dark" && {
+        "& .MuiInputBase-input.Mui-disabled": {
+          WebkitTextFillColor: "rgba(255, 255, 255, 0.7) !important",
+          color: "rgba(255, 255, 255, 0.7) !important",
+        },
+        "& .MuiOutlinedInput-notchedOutline": {
+          borderColor: "rgba(255, 255, 255, 0.23) !important",
+        },
+      }),
   };
 });

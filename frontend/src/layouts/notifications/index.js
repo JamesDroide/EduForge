@@ -19,12 +19,18 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import { API_ENDPOINTS } from "../../config/api";
 
+// Material Dashboard 2 React context
+import { useMaterialUIController } from "context";
+
 function UploadData() {
   const [fileData, setFileData] = useState([]);
   const [fileName, setFileName] = useState("");
   const [rawFile, setRawFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const navigate = useNavigate();
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
+
   const onDrop = useCallback((acceptedFiles) => {
     const file = acceptedFiles[0];
     setRawFile(file); // Guardamos el archivo original
@@ -183,9 +189,14 @@ function UploadData() {
       <MDBox mt={6} mb={3}>
         <Grid container spacing={3} justifyContent="center">
           <Grid item xs={12} md={10}>
-            <Card>
+            <Card
+              sx={{
+                backgroundColor: darkMode ? "transparent" : "white",
+                backgroundImage: darkMode ? "none" : undefined,
+              }}
+            >
               <MDBox p={4}>
-                <MDTypography variant="h5" mb={2}>
+                <MDTypography variant="h5" mb={2} color={darkMode ? "white" : "dark"}>
                   Subir archivo CSV o Excel para análisis
                 </MDTypography>
                 <MDBox
@@ -194,12 +205,23 @@ function UploadData() {
                   tabIndex={getRootProps().tabIndex}
                   role={getRootProps().role}
                   sx={{
-                    border: "2px dashed #aaa",
+                    border: darkMode ? "2px dashed rgba(255, 255, 255, 0.3)" : "2px dashed #aaa",
                     borderRadius: "10px",
                     padding: "40px",
                     textAlign: "center",
-                    backgroundColor: isDragActive ? "#f0f0f0" : "#fafafa",
+                    backgroundColor: isDragActive
+                      ? darkMode
+                        ? "rgba(255, 255, 255, 0.1)"
+                        : "#f0f0f0"
+                      : darkMode
+                      ? "rgba(255, 255, 255, 0.05)"
+                      : "#fafafa",
                     cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.08)" : "#f0f0f0",
+                      borderColor: darkMode ? "rgba(255, 255, 255, 0.5)" : "#888",
+                    },
                   }}
                 >
                   <input
@@ -212,8 +234,13 @@ function UploadData() {
                     style={getInputProps().style}
                     tabIndex={getInputProps().tabIndex}
                   />
-                  <Icon fontSize="large">cloud_upload</Icon>
-                  <MDTypography variant="body1">
+                  <Icon
+                    fontSize="large"
+                    sx={{ color: darkMode ? "rgba(255, 255, 255, 0.7)" : "inherit" }}
+                  >
+                    cloud_upload
+                  </Icon>
+                  <MDTypography variant="body1" color={darkMode ? "white" : "dark"}>
                     {isDragActive
                       ? "Suelta el archivo aquí..."
                       : "Arrastra y suelta un archivo aquí o haz clic para seleccionar"}
@@ -222,7 +249,7 @@ function UploadData() {
 
                 {fileName && (
                   <MDBox mt={2}>
-                    <MDTypography variant="subtitle1">
+                    <MDTypography variant="subtitle1" color={darkMode ? "white" : "dark"}>
                       <strong>Archivo cargado:</strong> {fileName}
                     </MDTypography>
                   </MDBox>
@@ -230,7 +257,7 @@ function UploadData() {
 
                 {fileData.length > 0 && (
                   <MDBox mt={4} maxHeight="300px" sx={{ overflow: "auto" }}>
-                    <MDTypography variant="h6" mb={1}>
+                    <MDTypography variant="h6" mb={1} color={darkMode ? "white" : "dark"}>
                       Vista previa:
                     </MDTypography>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -256,9 +283,16 @@ function UploadData() {
                                 <td
                                   key={j}
                                   style={{
-                                    border: "1px solid #ddd",
+                                    border: darkMode
+                                      ? "1px solid rgba(255, 255, 255, 0.2)"
+                                      : "1px solid #ddd",
                                     padding: "8px",
                                     fontSize: "14px",
+                                    color: darkMode ? "rgba(255, 255, 255, 0.9)" : "inherit",
+                                    backgroundColor:
+                                      darkMode && i === 0
+                                        ? "rgba(255, 255, 255, 0.05)"
+                                        : "transparent",
                                   }}
                                 >
                                   {value}

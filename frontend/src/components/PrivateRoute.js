@@ -9,12 +9,14 @@ function PrivateRoute({ children, requireAdmin = false }) {
   // Mostrar loading mientras se verifica la autenticación
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh'
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
         Cargando...
       </div>
     );
@@ -40,4 +42,3 @@ PrivateRoute.propTypes = {
 };
 
 export default PrivateRoute;
-

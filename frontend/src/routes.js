@@ -3,6 +3,7 @@ import Billing from "layouts/billing";
 import IndividualAnalysis from "layouts/individual";
 import Notifications from "layouts/notifications";
 import SignIn from "layouts/authentication/sign-in";
+import Profile from "layouts/profile";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -56,6 +57,22 @@ const routes = [
     component: (
       <PrivateRoute>
         <Notifications />
+      </PrivateRoute>
+    ),
+  },
+  {
+    type: "divider",
+    key: "divider-1",
+  },
+  {
+    type: "collapse",
+    name: "Mi Perfil",
+    key: "profile",
+    icon: <Icon fontSize="small">person</Icon>,
+    route: "/perfil",
+    component: (
+      <PrivateRoute>
+        <Profile />
       </PrivateRoute>
     ),
   },

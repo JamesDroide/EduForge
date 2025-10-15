@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 
 // react-router-dom components
-import { useLocation, NavLink } from "react-router-dom";
+import { useLocation, NavLink, useNavigate } from "react-router-dom";
 
 // prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
@@ -15,6 +15,7 @@ import Icon from "@mui/material/Icon";
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
+import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
 import SidenavCollapse from "examples/Sidenav/SidenavCollapse";
@@ -31,10 +32,15 @@ import {
   setWhiteSidenav,
 } from "context";
 
+// Auth Context
+import { useAuth } from "context/AuthContext";
+
 function Sidenav({ color, brand, brandName, routes, ...rest }) {
   const [controller, dispatch] = useMaterialUIController();
   const { miniSidenav, transparentSidenav, whiteSidenav, darkMode } = controller;
   const location = useLocation();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   // Función mejorada para detectar la ruta activa
   const isRouteActive = (route, key) => {
@@ -73,7 +79,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
 
     // Remove event listener on cleanup
     return () => window.removeEventListener("resize", handleMiniSidenav);
-  }, [dispatch, location]);
+  }, [dispatch, location, transparentSidenav, whiteSidenav]);
 
   // Render all the routes from the routes.js (All the visible items on the Sidenav)
   const renderRoutes = routes.map(({ type, name, icon, title, noCollapse, key, href, route }) => {
@@ -152,7 +158,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
             <Icon sx={{ fontWeight: "bold" }}>cerrar</Icon>
           </MDTypography>
         </MDBox>
-        <MDBox component={NavLink} to="/" display="flex" alignItems="center">
+        <MDBox component={NavLink} to="/dashboard" display="flex" alignItems="center">
           {brand && <MDBox component="img" src={brand} alt="Brand" width="2rem" />}
           <MDBox
             width={!brandName && "100%"}
@@ -171,7 +177,20 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
         }
       />
       <List>{renderRoutes}</List>
-      <MDBox p={2} mt="auto"></MDBox>
+      <MDBox p={2} mt="auto">
+        <MDButton
+          variant="gradient"
+          color="error"
+          fullWidth
+          onClick={() => {
+            logout();
+            navigate("/authentication/sign-in");
+          }}
+          startIcon={<Icon>logout</Icon>}
+        >
+          Cerrar Sesión
+        </MDButton>
+      </MDBox>
     </SidenavRoot>
   );
 }

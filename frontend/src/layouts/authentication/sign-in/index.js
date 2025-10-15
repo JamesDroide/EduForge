@@ -10,7 +10,6 @@ import { useNavigate } from "react-router-dom";
 // @mui material components
 import Card from "@mui/material/Card";
 import Switch from "@mui/material/Switch";
-import Grid from "@mui/material/Grid";
 import MuiLink from "@mui/material/Link";
 
 // Material Dashboard 2 React components
@@ -38,7 +37,7 @@ function SignIn() {
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -137,13 +136,7 @@ function SignIn() {
               </MDTypography>
             </MDBox>
             <MDBox mt={4} mb={1}>
-              <MDButton
-                variant="gradient"
-                color="info"
-                fullWidth
-                type="submit"
-                disabled={loading}
-              >
+              <MDButton variant="gradient" color="info" fullWidth type="submit" disabled={loading}>
                 {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
               </MDButton>
             </MDBox>
@@ -170,4 +163,3 @@ function SignIn() {
 }
 
 export default SignIn;
-

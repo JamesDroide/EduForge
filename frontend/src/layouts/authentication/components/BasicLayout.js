@@ -51,4 +51,3 @@ BasicLayout.propTypes = {
 };
 
 export default BasicLayout;
-
