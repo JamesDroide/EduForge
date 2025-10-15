@@ -103,8 +103,14 @@ async def create_user(
         )
 
         db.add(new_user)
+        db.flush()  # Forzar escritura a BD antes del commit
         db.commit()
         db.refresh(new_user)
+
+        # Verificar que realmente se guardó
+        verification = db.query(Usuario).filter(Usuario.id == new_user.id).first()
+        if not verification:
+            raise Exception("El usuario no se guardó correctamente en la base de datos")
 
         return new_user
 
