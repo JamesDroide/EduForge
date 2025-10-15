@@ -35,6 +35,7 @@ def run_migrations():
                 student_data_columns = {
                     'id_estudiante': 'INTEGER NOT NULL DEFAULT 0',
                     'nota_final': 'FLOAT NOT NULL DEFAULT 0',
+                    'fecha': 'DATE DEFAULT CURRENT_DATE',  # Agregar columna fecha
                     'created_at': 'TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP',
                 }
 

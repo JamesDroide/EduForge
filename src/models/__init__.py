@@ -33,4 +33,5 @@ class StudentData(Base):
     conducta = Column(String, nullable=True)
     asistencia = Column(Float, nullable=False)
     inasistencia = Column(Float, nullable=False)
+    fecha = Column(Date, nullable=True)  # Agregar fecha para compatibilidad con producción
     created_at = Column(DateTime, default=datetime.datetime.utcnow)  # Agregado

@@ -83,7 +83,8 @@ async def save_uploaded_file(file: UploadFile):
                 nota_final=float(row.get('nota_final', row.get('nota', 0))),  # Agregado nota_final
                 asistencia=float(row.get('asistencia', 0)),
                 inasistencia=float(row.get('inasistencia', 0)),
-                conducta=str(row.get('conducta', ''))
+                conducta=str(row.get('conducta', '')),
+                fecha=fecha_dt.date()  # Agregar fecha al modelo
             )
             session.add(student)
         session.commit()
