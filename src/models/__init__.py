@@ -27,7 +27,7 @@ class ResultadoPrediccion(Base):
 class StudentData(Base):
     __tablename__ = 'student_data'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    id_estudiante = Column(Integer, nullable=False)  # Cambiado de estudiante_id a id_estudiante
+    id_estudiante = Column('estudiante_id', Integer, nullable=False)  # Mapear id_estudiante a estudiante_id en BD
     nombre = Column(String, nullable=False)
     nota_final = Column(Float, nullable=False)  # Agregado
     conducta = Column(String, nullable=True)
