@@ -10,7 +10,7 @@ matplotlib
 psycopg2-binary
 python-multipart
 python-jose[cryptography]
-passlib[bcrypt]
+bcrypt
 python-dotenv
 email-validator
 openpyxl

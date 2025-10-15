@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from fastapi import HTTPException, status
 import os
 from dotenv import load_dotenv
@@ -14,9 +14,6 @@ SECRET_KEY = os.getenv("SECRET_KEY", "eduforge_super_secret_key_change_in_produc
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
 
-# Contexto de encriptación para passwords
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verifica si la contraseña en texto plano coincide con el hash
@@ -28,7 +25,16 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     Returns:
         bool: True si coinciden, False si no
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        # Convertir a bytes
+        password_bytes = plain_password.encode('utf-8')
+        hash_bytes = hashed_password.encode('utf-8')
+
+        # Verificar con bcrypt directamente
+        return bcrypt.checkpw(password_bytes, hash_bytes)
+    except Exception as e:
+        print(f"Error verificando contraseña: {str(e)}")
+        return False
 
 def get_password_hash(password: str) -> str:
     """
@@ -40,7 +46,19 @@ def get_password_hash(password: str) -> str:
     Returns:
         str: Hash de la contraseña
     """
-    return pwd_context.hash(password)
+    try:
+        # Convertir a bytes
+        password_bytes = password.encode('utf-8')
+
+        # Generar salt y hashear
+        salt = bcrypt.gensalt(rounds=12)
+        hashed = bcrypt.hashpw(password_bytes, salt)
+
+        # Retornar como string
+        return hashed.decode('utf-8')
+    except Exception as e:
+        print(f"Error generando hash: {str(e)}")
+        raise
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
@@ -87,4 +105,3 @@ def decode_access_token(token: str) -> dict:
             detail="Token inválido o expirado",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
