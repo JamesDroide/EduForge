@@ -143,6 +143,7 @@ async def create_user_admin(
     Crear un nuevo usuario desde el panel de administración
     """
     import logging
+    import time
     from sqlalchemy import inspect, text
     logger = logging.getLogger(__name__)
 
@@ -157,7 +158,7 @@ async def create_user_admin(
             )
 
         logger.info(f"🔵 Iniciando creación de usuario: {user_data.username}")
-        logger.info(f"🔵 Conexión BD: {db.bind.url.database} en {db.bind.url.host}")
+        logger.info(f"🔵 Conexión BD: {db.bind.url.database} en {db.bind.url.host}:{db.bind.url.port}")
 
         # Verificar si el usuario ya existe
         existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
@@ -199,21 +200,49 @@ async def create_user_admin(
         db.commit()
         logger.info(f"✅ Commit exitoso")
 
-        # VERIFICACIÓN CRÍTICA: Usar una nueva sesión para verificar persistencia
+        # CRÍTICO: Esperar que Railway propague el cambio
+        logger.info(f"⏳ Esperando propagación en Railway (100ms)...")
+        time.sleep(0.1)  # 100ms de delay
+
+        # VERIFICACIÓN CRÍTICA 1: Usar SQL directo en la MISMA sesión
+        logger.info(f"🔵 Verificación SQL directa en sesión actual...")
+        result = db.execute(text(f"SELECT COUNT(*) FROM usuarios WHERE id = {new_user.id}"))
+        count = result.scalar()
+        logger.info(f"✅ SQL en sesión actual: {count} registro(s)")
+
+        # VERIFICACIÓN CRÍTICA 2: Usar una nueva sesión INDEPENDIENTE
         logger.info(f"🔵 Verificando persistencia con nueva sesión...")
-        from config import SessionLocal
+        from config import SessionLocal, engine
+
+        # Crear nueva sesión con el MISMO engine
         verify_db = SessionLocal()
         try:
+            # Verificación con ORM
             verification = verify_db.query(Usuario).filter(Usuario.id == new_user.id).first()
             if not verification:
                 logger.error(f"❌ ERROR CRÍTICO: Usuario con ID {new_user.id} no encontrado en nueva sesión!")
-                raise Exception("El usuario no se guardó correctamente en la base de datos")
-            logger.info(f"✅ Usuario verificado en BD con ID: {verification.id}")
 
-            # Verificación adicional con SQL directo
-            result = verify_db.execute(text(f"SELECT COUNT(*) FROM usuarios WHERE id = {new_user.id}"))
-            count = result.scalar()
-            logger.info(f"✅ Verificación SQL directa: {count} registros encontrados")
+                # Verificar cuántos usuarios hay en total
+                total = verify_db.execute(text("SELECT COUNT(*) FROM usuarios")).scalar()
+                logger.error(f"   Total de usuarios en BD: {total}")
+
+                # Listar últimos IDs
+                last_ids = verify_db.execute(text("SELECT id, username FROM usuarios ORDER BY id DESC LIMIT 5")).fetchall()
+                logger.error(f"   Últimos IDs en BD: {last_ids}")
+
+                raise Exception("El usuario no se guardó correctamente en la base de datos")
+
+            logger.info(f"✅ Usuario verificado en BD con ID: {verification.id}, Username: {verification.username}")
+
+            # Verificación adicional con SQL directo en nueva sesión
+            result2 = verify_db.execute(text(f"SELECT COUNT(*) FROM usuarios WHERE id = {new_user.id}"))
+            count2 = result2.scalar()
+            logger.info(f"✅ Verificación SQL en nueva sesión: {count2} registros encontrados")
+
+            # Verificar que la BD es la correcta
+            db_name = verify_db.execute(text("SELECT current_database()")).scalar()
+            logger.info(f"✅ Base de datos actual: {db_name}")
+
         finally:
             verify_db.close()
 
