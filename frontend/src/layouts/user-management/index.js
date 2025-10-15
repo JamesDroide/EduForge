@@ -38,8 +38,6 @@ import { API_BASE_URL } from "config/api";
 // Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
-// Importar API_BASE_URL
-import { API_BASE_URL } from "../../config/api";
 
 function UserManagement() {
   const navigate = useNavigate();
