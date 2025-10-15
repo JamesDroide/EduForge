@@ -2,6 +2,9 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Date
 from config import Base
 import datetime
 
+# Importar el modelo de Usuario
+from models.user import Usuario
+
 class ResultadoPrediccion(Base):
     __tablename__ = 'resultados_prediccion'
     id = Column(Integer, primary_key=True, autoincrement=True)

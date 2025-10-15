@@ -2,9 +2,13 @@ import Dashboard from "layouts/dashboard";
 import Billing from "layouts/billing";
 import IndividualAnalysis from "layouts/individual";
 import Notifications from "layouts/notifications";
+import SignIn from "layouts/authentication/sign-in";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
+
+// Componente para proteger rutas
+import PrivateRoute from "components/PrivateRoute";
 
 const routes = [
   {
@@ -13,7 +17,11 @@ const routes = [
     key: "dashboard",
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
-    component: <Dashboard />,
+    component: (
+      <PrivateRoute>
+        <Dashboard />
+      </PrivateRoute>
+    ),
   },
   {
     type: "collapse",
@@ -21,7 +29,11 @@ const routes = [
     key: "individual",
     icon: <Icon fontSize="small">person_search</Icon>,
     route: "/individual",
-    component: <IndividualAnalysis />,
+    component: (
+      <PrivateRoute>
+        <IndividualAnalysis />
+      </PrivateRoute>
+    ),
   },
   {
     type: "collapse",
@@ -29,7 +41,11 @@ const routes = [
     key: "billing",
     icon: <Icon fontSize="small">receipt_long</Icon>,
     route: "/resultados-completos",
-    component: <Billing />,
+    component: (
+      <PrivateRoute>
+        <Billing />
+      </PrivateRoute>
+    ),
   },
   {
     type: "collapse",
@@ -37,7 +53,19 @@ const routes = [
     key: "notifications",
     icon: <Icon fontSize="small">notifications</Icon>,
     route: "/subir-archivos",
-    component: <Notifications />,
+    component: (
+      <PrivateRoute>
+        <Notifications />
+      </PrivateRoute>
+    ),
+  },
+  {
+    type: "public",
+    name: "Sign In",
+    key: "sign-in",
+    icon: <Icon fontSize="small">login</Icon>,
+    route: "/authentication/sign-in",
+    component: <SignIn />,
   },
 ];
 

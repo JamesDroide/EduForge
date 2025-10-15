@@ -20,6 +20,14 @@ export const API_BASE_URL = getApiUrl();
 
 // Endpoints específicos
 export const API_ENDPOINTS = {
+  // Auth endpoints
+  LOGIN: `${API_BASE_URL}/auth/login`,
+  REGISTER: `${API_BASE_URL}/auth/register`,
+  ME: `${API_BASE_URL}/auth/me`,
+  CHANGE_PASSWORD: `${API_BASE_URL}/auth/change-password`,
+  LOGOUT: `${API_BASE_URL}/auth/logout`,
+  USERS: `${API_BASE_URL}/auth/users`,
+
   // Dashboard endpoints
   STUDENTS_AT_RISK: `${API_BASE_URL}/dashboard_risk/students_at_risk`,
   RISK_SUMMARY: `${API_BASE_URL}/dashboard_risk/risk_summary`,

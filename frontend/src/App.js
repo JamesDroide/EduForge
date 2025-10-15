@@ -56,6 +56,9 @@ import Billing from "layouts/billing";
 import Notifications from "layouts/notifications";
 import UploadData from "layouts/notifications";
 
+// Auth Provider
+import { AuthProvider } from "context/AuthContext";
+
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
   const {
@@ -160,6 +163,36 @@ export default function App() {
     <CacheProvider value={rtlCache}>
       <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
         <CssBaseline />
+        <AuthProvider>
+          {layout === "dashboard" && (
+            <>
+              <Sidenav
+                color={sidenavColor}
+                brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
+                brandName="EduForge"
+                routes={routes}
+                onMouseEnter={handleOnMouseEnter}
+                onMouseLeave={handleOnMouseLeave}
+              />
+              <Configurator />
+              {configsButton}
+            </>
+          )}
+          {layout === "vr" && <Configurator />}
+          <Routes>
+            {getRoutes}
+            <Route path="/upload-data" element={<UploadData />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
+            <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
+          </Routes>
+        </AuthProvider>
+      </ThemeProvider>
+    </CacheProvider>
+  ) : (
+    <ThemeProvider theme={darkMode ? themeDark : theme}>
+      <CssBaseline />
+      <AuthProvider>
         {layout === "dashboard" && (
           <>
             <Sidenav
@@ -179,34 +212,10 @@ export default function App() {
           {getRoutes}
           <Route path="/upload-data" element={<UploadData />} />
           <Route path="/billing" element={<Billing />} />
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
+          <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
         </Routes>
-      </ThemeProvider>
-    </CacheProvider>
-  ) : (
-    <ThemeProvider theme={darkMode ? themeDark : theme}>
-      <CssBaseline />
-      {layout === "dashboard" && (
-        <>
-          <Sidenav
-            color={sidenavColor}
-            brand={(transparentSidenav && !darkMode) || whiteSidenav ? brandDark : brandWhite}
-            brandName="EduForge"
-            routes={routes}
-            onMouseEnter={handleOnMouseEnter}
-            onMouseLeave={handleOnMouseLeave}
-          />
-          <Configurator />
-          {configsButton}
-        </>
-      )}
-      {layout === "vr" && <Configurator />}
-      <Routes>
-        {getRoutes}
-        <Route path="/upload-data" element={<UploadData />} />
-        <Route path="/billing" element={<Billing />} />
-        <Route path="*" element={<Navigate to="/dashboard" />} />
-      </Routes>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

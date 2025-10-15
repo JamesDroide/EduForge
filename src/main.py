@@ -7,7 +7,7 @@ from services.attendance_service import update_attendance_data, clear_latest_csv
 from fastapi.responses import JSONResponse
 import pandas as pd
 import os
-from api.routes import dashboard_attendance, dashboard_risk
+from api.routes import dashboard_attendance, dashboard_risk, auth
 from config import Base, engine, SessionLocal
 from models import ResultadoPrediccion
 
@@ -24,9 +24,10 @@ clear_latest_predictions()
 clear_latest_csv_data()  # También limpiar datos de asistencia
 print("🔄 Servidor iniciado - Variables globales limpiadas")
 
-app = FastAPI()
+app = FastAPI(title="Eduforge API", version="1.0.0")
 
 # Incluir routers para los dashboards
+app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
 app.include_router(dashboard_attendance.router, prefix="/dashboard_attendance")
 app.include_router(dashboard_risk.router, prefix="/dashboard_risk")
 
