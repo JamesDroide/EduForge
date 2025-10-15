@@ -25,8 +25,8 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
 
-// Importar API_BASE_URL
-import { API_BASE_URL } from "../../../../config/api";
+// API configuration
+import { API_BASE_URL } from "config/api";
 
 // Imagen por defecto para estudiantes
 import defaultStudentImage from "assets/images/Estudiante.jpg";

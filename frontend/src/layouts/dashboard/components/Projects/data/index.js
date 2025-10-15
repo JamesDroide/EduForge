@@ -24,8 +24,8 @@ import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
 import MDProgress from "components/MDProgress";
 
-// Importar API_BASE_URL
-import { API_BASE_URL } from "../../../../config/api";
+// API configuration
+import { API_BASE_URL } from "config/api";
 
 // Images - mantener las imágenes por defecto para estudiantes sin foto específica
 import logoXD from "assets/images/juancito.jpg";

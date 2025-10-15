@@ -32,6 +32,9 @@ import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import MDAlert from "components/MDAlert";
 
+// API configuration
+import { API_BASE_URL } from "config/api";
+
 // Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
@@ -267,9 +270,12 @@ function UserManagement() {
     }
   };
 
-  // Función para alternar el estado activo de un usuario
+  // Función para activar/desactivar usuario
   const handleToggleActive = async (user) => {
+    setError("");
+    setSuccess("");
     setLoading(true);
+
     try {
       const response = await fetch(`${API_BASE_URL}/admin/users/${user.id}`, {
         method: "PUT",
@@ -286,7 +292,7 @@ function UserManagement() {
       });
 
       if (!response.ok) {
-        throw new Error("Error al actualizar el estado del usuario");
+        throw new Error("Error al cambiar el estado del usuario");
       }
 
       setSuccess(`Usuario ${!user.is_active ? "activado" : "desactivado"} exitosamente`);
@@ -298,13 +304,16 @@ function UserManagement() {
     }
   };
 
-  // Función para eliminar un usuario
+  // Función para eliminar usuario
   const handleDeleteUser = async (user) => {
     if (!window.confirm(`¿Estás seguro de eliminar al usuario ${user.username}?`)) {
       return;
     }
 
+    setError("");
+    setSuccess("");
     setLoading(true);
+
     try {
       const response = await fetch(`${API_BASE_URL}/admin/users/${user.id}`, {
         method: "DELETE",
