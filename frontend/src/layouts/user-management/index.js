@@ -35,6 +35,9 @@ import MDAlert from "components/MDAlert";
 // Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
+// Importar API_BASE_URL
+import { API_BASE_URL } from "../../config/api";
+
 function UserManagement() {
   const navigate = useNavigate();
   const [controller] = useMaterialUIController();
@@ -87,7 +90,7 @@ function UserManagement() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/admin/users", {
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
         headers: {
           Authorization: `Bearer ${getAdminToken()}`,
         },
@@ -164,8 +167,8 @@ function UserManagement() {
     try {
       const url =
         dialogMode === "create"
-          ? "http://localhost:8000/admin/users"
-          : `http://localhost:8000/admin/users/${selectedUser.id}`;
+          ? `${API_BASE_URL}/admin/users`
+          : `${API_BASE_URL}/admin/users/${selectedUser.id}`;
 
       const method = dialogMode === "create" ? "POST" : "PUT";
 
@@ -237,7 +240,7 @@ function UserManagement() {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/admin/users/${selectedUser.id}/change-password`,
+        `${API_BASE_URL}/admin/users/${selectedUser.id}/change-password`,
         {
           method: "POST",
           headers: {
@@ -268,7 +271,7 @@ function UserManagement() {
   const handleToggleActive = async (user) => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/admin/users/${user.id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${user.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -303,7 +306,7 @@ function UserManagement() {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/admin/users/${user.id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${user.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${getAdminToken()}`,

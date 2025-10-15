@@ -2,23 +2,33 @@ import axios from "axios";
 
 // Configuración de API para diferentes entornos
 const getApiUrl = () => {
-  // En producción, usar la variable de entorno
-  let apiUrl = process.env.REACT_APP_API_URL || "https://eduforge-production.up.railway.app";
+  // Primero verificar si hay una URL específica en el .env
+  if (process.env.REACT_APP_API_URL) {
+    let apiUrl = process.env.REACT_APP_API_URL;
 
-  // Eliminar barra extra al final (si existe)
-  if (apiUrl.endsWith("/")) {
-    apiUrl = apiUrl.slice(0, -1);
+    // Eliminar barra extra al final (si existe)
+    if (apiUrl.endsWith("/")) {
+      apiUrl = apiUrl.slice(0, -1);
+    }
+
+    return apiUrl;
   }
 
-  // Si es desarrollo, usar localhost
+  // Si no hay .env y estamos en desarrollo, usar localhost
   if (process.env.NODE_ENV !== "production") {
     return "http://localhost:8000"; // Para desarrollo local
   }
 
-  return apiUrl;
+  // Fallback para producción
+  return "https://eduforge-production.up.railway.app";
 };
 
 export const API_BASE_URL = getApiUrl();
+
+// Log para verificar qué URL se está usando
+console.log("🔧 API_BASE_URL configurada:", API_BASE_URL);
+console.log("🌍 NODE_ENV:", process.env.NODE_ENV);
+console.log("📍 REACT_APP_API_URL:", process.env.REACT_APP_API_URL);
 
 // Crear instancia de axios configurada
 const api = axios.create({

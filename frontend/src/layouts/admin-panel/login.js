@@ -17,6 +17,9 @@ import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import MDAlert from "components/MDAlert";
 
+// Importar API_BASE_URL
+import { API_BASE_URL } from "../../config/api";
+
 // Images
 import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 
@@ -41,7 +44,7 @@ function AdminLogin() {
     }
 
     try {
-      const response = await fetch("http://localhost:8000/admin/login", {
+      const response = await fetch(`${API_BASE_URL}/admin/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
