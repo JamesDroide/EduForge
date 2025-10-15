@@ -79,6 +79,57 @@ async def root():
         "endpoints": ["/docs", "/dashboard_attendance", "/dashboard_risk", "/auth"]
     }
 
+@app.get("/api/diagnostico-bd")
+async def diagnostico_bd():
+    """
+    Endpoint de diagnóstico para verificar el estado de la base de datos
+    SOLO para debugging - ELIMINAR en producción final
+    """
+    from sqlalchemy import inspect, text
+    import os
+
+    try:
+        db = SessionLocal()
+
+        # Información de conexión
+        db_name = db.execute(text("SELECT current_database()")).scalar()
+        user_name = db.execute(text("SELECT current_user")).scalar()
+
+        # Tablas
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+
+        # Contar usuarios
+        usuarios_count = db.execute(text("SELECT COUNT(*) FROM usuarios")).scalar() if 'usuarios' in tables else 0
+
+        # Listar usuarios si existen
+        usuarios_list = []
+        if usuarios_count > 0:
+            result = db.execute(text("SELECT id, username, email, rol FROM usuarios ORDER BY id DESC LIMIT 10"))
+            usuarios_list = [{"id": r[0], "username": r[1], "email": r[2], "rol": r[3]} for r in result]
+
+        # Variables de entorno (sin valores sensibles)
+        database_url_configured = bool(os.getenv("DATABASE_URL"))
+
+        db.close()
+
+        return {
+            "database": db_name,
+            "user": user_name,
+            "tables": tables,
+            "usuarios_count": usuarios_count,
+            "usuarios": usuarios_list,
+            "database_url_configured": database_url_configured,
+            "host": str(engine.url.host),
+            "port": str(engine.url.port),
+            "driver": str(engine.url.drivername)
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "message": "Error al obtener diagnóstico de BD"
+        }
+
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...), current_user: Usuario = Depends(get_current_user_optional)):
     try:
