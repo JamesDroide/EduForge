@@ -5,7 +5,7 @@ from io import BytesIO
 import base64
 from sqlalchemy.orm import Session
 from src.config import SessionLocal
-from src.models.student_data_model import StudentData
+from src.models import StudentData  # Corregido el import
 
 
 class BehaviorService:
@@ -16,9 +16,9 @@ class BehaviorService:
         """
         db = SessionLocal()
         try:
-            student_data = db.query(StudentData).filter(StudentData.estudiante_id == student_id).all()
+            student_data = db.query(StudentData).filter(StudentData.id_estudiante == student_id).all()  # Cambiado a id_estudiante
             behavior = [data.conducta for data in student_data]  # Recupera los valores de conducta
-            dates = [data.fecha.strftime("%b %Y") for data in student_data]  # Convertir la fecha a mes/año
+            dates = [data.created_at.strftime("%b %Y") for data in student_data]  # Cambiado a created_at
             return behavior, dates
         finally:
             db.close()

@@ -78,9 +78,9 @@ async def save_uploaded_file(file: UploadFile):
             except Exception:
                 fecha_dt = datetime(2025, 1, 1)
             student = StudentData(
-                estudiante_id=int(row.get('estudiante_id', row.get('id', 0))),
+                id_estudiante=int(row.get('estudiante_id', row.get('id', 0))),  # Cambiado a id_estudiante
                 nombre=str(row.get('nombre', '')),
-                fecha=fecha_dt,
+                nota_final=float(row.get('nota_final', row.get('nota', 0))),  # Agregado nota_final
                 asistencia=float(row.get('asistencia', 0)),
                 inasistencia=float(row.get('inasistencia', 0)),
                 conducta=str(row.get('conducta', ''))

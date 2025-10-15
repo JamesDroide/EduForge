@@ -5,7 +5,7 @@ from io import BytesIO
 import base64
 from sqlalchemy.orm import Session
 from src.config import SessionLocal
-from src.models.student_data_model import StudentData
+from src.models import StudentData  # Corregido el import
 
 
 class GradesService:
@@ -16,12 +16,12 @@ class GradesService:
         """
         db = SessionLocal()
         try:
-            student_data = db.query(StudentData).filter(StudentData.estudiante_id == student_id).all()
-            # Aquí obtienes las calificaciones, asistencia, conducta y la fecha
-            grades = [data.calificaciones for data in student_data]
+            student_data = db.query(StudentData).filter(StudentData.id_estudiante == student_id).all()  # Cambiado a id_estudiante
+            # Aquí obtienes las calificaciones, asistencia, conducta
+            grades = [data.nota_final for data in student_data]  # Cambiado a nota_final
             attendance = [data.asistencia for data in student_data]
             behavior = [data.conducta for data in student_data]
-            months = [data.fecha.strftime("%b %Y") for data in student_data]  # Convertir la fecha a mes/año
+            months = [data.created_at.strftime("%b %Y") for data in student_data]  # Cambiado a created_at
             return grades, attendance, behavior, months
         finally:
             db.close()
