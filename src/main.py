@@ -7,7 +7,7 @@ from services.attendance_service import update_attendance_data, clear_latest_csv
 from fastapi.responses import JSONResponse
 import pandas as pd
 import os
-from api.routes import dashboard_attendance, dashboard_risk, auth
+from api.routes import dashboard_attendance, dashboard_risk, auth, users, admin_panel
 from config import Base, engine, SessionLocal
 from models import ResultadoPrediccion
 
@@ -28,6 +28,8 @@ app = FastAPI(title="Eduforge API", version="1.0.0")
 
 # Incluir routers para los dashboards
 app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
+app.include_router(admin_panel.router, tags=["Panel de Administración"])
+app.include_router(users.router, prefix="/api", tags=["Gestión de Usuarios"])
 app.include_router(dashboard_attendance.router, prefix="/dashboard_attendance")
 app.include_router(dashboard_risk.router, prefix="/dashboard_risk")
 
@@ -48,7 +50,12 @@ app.add_middleware(
 )
 @app.get("/")
 async def root():
-    return {"message": "Servidor activo en la raíz."}
+    """Ruta raíz con información sobre la API"""
+    return {
+        "message": "API EduForge funcionando correctamente",
+        "version": "1.0.0",
+        "endpoints": ["/docs", "/dashboard_attendance", "/dashboard_risk", "/auth"]
+    }
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -279,3 +286,98 @@ async def get_dashboard_status():
     except Exception as e:
         print(f"❌ Error obteniendo estado del dashboard: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error al obtener estado del dashboard: {str(e)}")
+
+@app.get("/diagnostico-usuarios")
+async def diagnostico_usuarios():
+    """Endpoint temporal para diagnosticar y crear usuario administrador"""
+    from models.user import Usuario
+    from utils.security import get_password_hash, verify_password
+
+    db = SessionLocal()
+    try:
+        usuarios = db.query(Usuario).all()
+
+        resultado = {
+            "total_usuarios": len(usuarios),
+            "usuarios": []
+        }
+
+        for u in usuarios:
+            resultado["usuarios"].append({
+                "id": u.id,
+                "username": u.username,
+                "email": u.email,
+                "rol": u.rol,
+                "activo": u.is_active,
+                "password_james232_valida": verify_password("james232", u.password_hash)
+            })
+
+        # Verificar si existe "administrador"
+        admin = db.query(Usuario).filter(Usuario.username == "administrador").first()
+
+        if not admin:
+            resultado["accion"] = "Usuario 'administrador' NO existe - Creándolo ahora..."
+            nuevo_admin = Usuario(
+                username="administrador",
+                email="admin@eduforge.com",
+                password_hash=get_password_hash("james232"),
+                rol="administrador",
+                is_active=True
+            )
+            db.add(nuevo_admin)
+            db.commit()
+            db.refresh(nuevo_admin)
+            resultado["administrador_creado"] = True
+            resultado["nuevo_usuario"] = {
+                "id": nuevo_admin.id,
+                "username": nuevo_admin.username,
+                "email": nuevo_admin.email,
+                "rol": nuevo_admin.rol,
+                "activo": nuevo_admin.is_active
+            }
+        else:
+            resultado["accion"] = "Usuario 'administrador' YA existe"
+            resultado["administrador_creado"] = False
+
+            # Verificar y actualizar contraseña si es necesario
+            if not verify_password("james232", admin.password_hash):
+                resultado["password_actualizada"] = True
+                resultado["mensaje_password"] = "Contraseña incorrecta - ACTUALIZADA a 'james232'"
+                admin.password_hash = get_password_hash("james232")
+                db.commit()
+            else:
+                resultado["password_actualizada"] = False
+                resultado["mensaje_password"] = "Contraseña 'james232' es CORRECTA"
+
+            # Verificar que sea administrador
+            if admin.rol != "administrador":
+                resultado["rol_actualizado"] = True
+                resultado["mensaje_rol"] = f"Rol era '{admin.rol}' - ACTUALIZADO a 'administrador'"
+                admin.rol = "administrador"
+                db.commit()
+            else:
+                resultado["rol_actualizado"] = False
+                resultado["mensaje_rol"] = "Rol es 'administrador' - CORRECTO"
+
+            # Verificar que esté activo
+            if not admin.is_active:
+                resultado["activado"] = True
+                resultado["mensaje_activo"] = "Usuario estaba inactivo - ACTIVADO"
+                admin.is_active = True
+                db.commit()
+            else:
+                resultado["activado"] = False
+                resultado["mensaje_activo"] = "Usuario está activo - CORRECTO"
+
+        resultado["credenciales"] = {
+            "url": "http://localhost:3000/admin-panel/login",
+            "username": "administrador",
+            "password": "james232",
+            "codigo_acceso": "EDUFORGE2025"
+        }
+
+        resultado["instrucciones"] = "Usa las credenciales de arriba para acceder al panel de administración"
+
+        return resultado
+    finally:
+        db.close()

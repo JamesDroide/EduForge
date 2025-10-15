@@ -55,6 +55,10 @@ import brandDark from "assets/images/logo-ct-dark.png";
 import Billing from "layouts/billing";
 import UploadData from "layouts/notifications";
 
+// Panel de Administración (independiente)
+import AdminLogin from "layouts/admin-panel/login";
+import UserManagement from "layouts/user-management";
+
 // Auth Provider
 import { AuthProvider } from "context/AuthContext";
 
@@ -163,7 +167,8 @@ export default function App() {
       <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
         <CssBaseline />
         <AuthProvider>
-          {layout === "dashboard" && (
+          {/* Solo mostrar Sidenav si NO estamos en el panel de administración */}
+          {layout === "dashboard" && !pathname.startsWith("/admin-panel") && (
             <>
               <Sidenav
                 color={sidenavColor}
@@ -182,6 +187,9 @@ export default function App() {
             {getRoutes}
             <Route path="/upload-data" element={<UploadData />} />
             <Route path="/billing" element={<Billing />} />
+            {/* Panel de Administración Independiente - URLs especiales */}
+            <Route path="/admin-panel/login" element={<AdminLogin />} />
+            <Route path="/admin-panel/usuarios" element={<UserManagement />} />
             <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
             <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
           </Routes>
@@ -192,7 +200,8 @@ export default function App() {
     <ThemeProvider theme={darkMode ? themeDark : theme}>
       <CssBaseline />
       <AuthProvider>
-        {layout === "dashboard" && (
+        {/* Solo mostrar Sidenav si NO estamos en el panel de administración */}
+        {layout === "dashboard" && !pathname.startsWith("/admin-panel") && (
           <>
             <Sidenav
               color={sidenavColor}
@@ -211,6 +220,9 @@ export default function App() {
           {getRoutes}
           <Route path="/upload-data" element={<UploadData />} />
           <Route path="/billing" element={<Billing />} />
+          {/* Panel de Administración Independiente - URLs especiales */}
+          <Route path="/admin-panel/login" element={<AdminLogin />} />
+          <Route path="/admin-panel/usuarios" element={<UserManagement />} />
           <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
           <Route path="*" element={<Navigate to="/authentication/sign-in" />} />
         </Routes>

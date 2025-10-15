@@ -17,6 +17,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Schema para crear un nuevo usuario"""
     password: str = Field(..., min_length=6, max_length=100)
+    is_active: bool = True
 
 class UserLogin(BaseModel):
     """Schema para login"""
@@ -49,3 +50,13 @@ class ChangePassword(BaseModel):
     old_password: str
     new_password: str = Field(..., min_length=6, max_length=100)
 
+class UserUpdate(BaseModel):
+    """Schema para actualizar un usuario existente"""
+    username: Optional[str] = Field(None, min_length=3, max_length=50)
+    email: Optional[EmailStr] = None
+    rol: Optional[RolEnum] = None
+    is_active: Optional[bool] = None
+
+class PasswordChange(BaseModel):
+    """Schema para cambiar la contraseña de un usuario (por administrador)"""
+    new_password: str = Field(..., min_length=6, max_length=100)
