@@ -1,15 +1,19 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from upload import save_uploaded_file, clear_previous_data
 from models.predictor import predict_desertion
 from services.risk_service import update_latest_predictions, clear_latest_predictions
-from services.attendance_service import update_attendance_data, clear_latest_csv_data  # Importar clear
+from services.attendance_service import update_attendance_data, clear_latest_csv_data
+from services.upload_history_service import UploadHistoryService
 from fastapi.responses import JSONResponse
 import pandas as pd
 import os
-from api.routes import dashboard_attendance, dashboard_risk, auth, users, admin_panel
+import time
+from api.routes import dashboard_attendance, dashboard_risk, auth, users, admin_panel, upload_history
 from config import Base, engine, SessionLocal
 from models import ResultadoPrediccion
+from utils.dependencies import get_current_user_optional
+from models.user import Usuario
 
 # Ejecutar migraciones automáticas al iniciar
 from migrations.auto_migrate import run_migrations
@@ -30,6 +34,7 @@ app = FastAPI(title="Eduforge API", version="1.0.0")
 app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
 app.include_router(admin_panel.router, tags=["Panel de Administración"])
 app.include_router(users.router, prefix="/api", tags=["Gestión de Usuarios"])
+app.include_router(upload_history.router, prefix="/api", tags=["Historial de Cargas"])
 app.include_router(dashboard_attendance.router, prefix="/dashboard_attendance")
 app.include_router(dashboard_risk.router, prefix="/dashboard_risk")
 
@@ -58,35 +63,52 @@ async def root():
     }
 
 @app.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
+async def upload_file(file: UploadFile = File(...), current_user: Usuario = Depends(get_current_user_optional)):
     try:
         # Limpiar datos anteriores antes de cargar el nuevo archivo
         clear_previous_data()
 
         file_path = await save_uploaded_file(file)
-        print(f"✅ Archivo guardado en: {file_path}")  # Debug para ver la ruta real
+
+        # Guardar en historial si hay usuario autenticado
+        upload_id = None
+        if current_user:
+            db = SessionLocal()
+            upload_record = UploadHistoryService.create_upload_record(
+                db=db,
+                filename=file.filename,
+                original_filename=file.filename,
+                file_path=file_path,
+                user_id=current_user.id
+            )
+            upload_id = upload_record.id
+            db.close()
+
+        print(f"✅ Archivo guardado en: {file_path}")
         return {
             "success": True,
             "message": f"Archivo '{file.filename}' guardado correctamente",
             "filename": file.filename,
             "filepath": file_path,
-            "dashboard_reset": True  # Indicar que el dashboard se reseteo
+            "upload_id": upload_id,
+            "dashboard_reset": True
         }
     except Exception as e:
         print(f"❌ Error en upload: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error al subir archivo: {str(e)}")
 
 @app.post("/predict")
-async def predict(filename: str):
+async def predict(filename: str, upload_id: int = None):
+    start_time = time.time()
+
     try:
         # Usar la ruta absoluta consistentemente
         upload_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
         file_path = os.path.join(upload_dir, filename)
 
-        print(f"Buscando archivo en: {file_path}")  # Para depuración
+        print(f"Buscando archivo en: {file_path}")
 
         if not os.path.exists(file_path):
-            # Listar archivos disponibles para debug
             try:
                 available_files = os.listdir(upload_dir) if os.path.exists(upload_dir) else []
             except:
@@ -99,30 +121,121 @@ async def predict(filename: str):
 
         # Verificar que el archivo sea legible
         try:
-            import pandas as pd
             df_test = pd.read_csv(file_path)
             print(f"✅ Archivo leído correctamente. Columnas: {df_test.columns.tolist()}")
             print(f"✅ Número de filas: {len(df_test)}")
+            total_students = len(df_test)
         except Exception as e:
             print(f"❌ Error leyendo el archivo: {e}")
+
+            # Actualizar historial con error si existe upload_id
+            if upload_id:
+                db = SessionLocal()
+                UploadHistoryService.update_upload_stats(
+                    db=db,
+                    upload_id=upload_id,
+                    total_students=0,
+                    processed_students=0,
+                    failed_students=0,
+                    high_risk=0,
+                    medium_risk=0,
+                    low_risk=0,
+                    processing_time=time.time() - start_time,
+                    status='error',
+                    error_message=f"Error leyendo CSV: {str(e)}"
+                )
+                db.close()
+
             raise HTTPException(status_code=400, detail=f"Error leyendo el archivo CSV: {str(e)}")
 
         # Llamar a la función de predicción
         predictions = predict_desertion(file_path)
 
-        # ¡NUEVO! Actualizar los datos para el frontend
+        # Actualizar los datos para el frontend
         update_latest_predictions(predictions)
-
-        # ¡NUEVO! Actualizar los datos de asistencia para el gráfico
         update_attendance_data(predictions)
+
+        # Guardar predicciones en el historial si existe upload_id
+        if upload_id:
+            db = SessionLocal()
+
+            # Contar estadísticas
+            high_risk_count = sum(1 for p in predictions if p.get('riesgo_desercion') == 'Alto')
+            medium_risk_count = sum(1 for p in predictions if p.get('riesgo_desercion') == 'Medio')
+            low_risk_count = sum(1 for p in predictions if p.get('riesgo_desercion') == 'Bajo')
+            processed_count = len(predictions)
+            failed_count = total_students - processed_count
+
+            # Guardar cada predicción
+            for pred in predictions:
+                # Identificar factores de riesgo
+                risk_factors = []
+                if pred.get('nota_final', 0) < 11:
+                    risk_factors.append('Nota baja')
+                if pred.get('asistencia', 100) < 75:
+                    risk_factors.append('Asistencia baja')
+                if pred.get('conducta') in ['Mala', 'Regular']:
+                    risk_factors.append('Conducta deficiente')
+
+                UploadHistoryService.add_prediction_to_upload(
+                    db=db,
+                    upload_id=upload_id,
+                    estudiante_id=pred.get('id_estudiante', 0),
+                    nombre=pred.get('nombre', 'Sin nombre'),
+                    nota_final=pred.get('nota_final', 0),
+                    conducta=pred.get('conducta', ''),
+                    asistencia=pred.get('asistencia', 0),
+                    inasistencia=pred.get('inasistencia', 0),
+                    resultado_prediccion=pred.get('resultado_prediccion', '0'),
+                    riesgo_desercion=pred.get('riesgo_desercion', 'Bajo'),
+                    probabilidad_desercion=pred.get('probabilidad_desercion', 0.0),
+                    tiempo_prediccion=pred.get('tiempo_prediccion', 0.0),
+                    risk_factors={'factors': risk_factors} if risk_factors else None
+                )
+
+            # Actualizar estadísticas del upload
+            processing_time = time.time() - start_time
+            UploadHistoryService.update_upload_stats(
+                db=db,
+                upload_id=upload_id,
+                total_students=total_students,
+                processed_students=processed_count,
+                failed_students=failed_count,
+                high_risk=high_risk_count,
+                medium_risk=medium_risk_count,
+                low_risk=low_risk_count,
+                processing_time=processing_time,
+                status='success' if failed_count == 0 else 'partial'
+            )
+
+            db.close()
+            print(f"✅ Historial actualizado: {processed_count} predicciones guardadas")
 
         return {"predictions": predictions}
 
     except HTTPException:
-        # Re-lanzar HTTPExceptions tal como están
         raise
     except Exception as e:
         print(f"❌ Error general en /predict: {e}")
+
+        # Actualizar historial con error si existe upload_id
+        if upload_id:
+            db = SessionLocal()
+            UploadHistoryService.update_upload_stats(
+                db=db,
+                upload_id=upload_id,
+                total_students=0,
+                processed_students=0,
+                failed_students=0,
+                high_risk=0,
+                medium_risk=0,
+                low_risk=0,
+                processing_time=time.time() - start_time,
+                status='error',
+                error_message=str(e)
+            )
+            db.close()
+
         raise HTTPException(status_code=400, detail=f"Error procesando el archivo: {str(e)}")
 
 @app.get("/api/reporte-general")
@@ -287,97 +400,7 @@ async def get_dashboard_status():
         print(f"❌ Error obteniendo estado del dashboard: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error al obtener estado del dashboard: {str(e)}")
 
-@app.get("/diagnostico-usuarios")
-async def diagnostico_usuarios():
-    """Endpoint temporal para diagnosticar y crear usuario administrador"""
-    from models.user import Usuario
-    from utils.security import get_password_hash, verify_password
-
-    db = SessionLocal()
-    try:
-        usuarios = db.query(Usuario).all()
-
-        resultado = {
-            "total_usuarios": len(usuarios),
-            "usuarios": []
-        }
-
-        for u in usuarios:
-            resultado["usuarios"].append({
-                "id": u.id,
-                "username": u.username,
-                "email": u.email,
-                "rol": u.rol,
-                "activo": u.is_active,
-                "password_james232_valida": verify_password("james232", u.password_hash)
-            })
-
-        # Verificar si existe "administrador"
-        admin = db.query(Usuario).filter(Usuario.username == "administrador").first()
-
-        if not admin:
-            resultado["accion"] = "Usuario 'administrador' NO existe - Creándolo ahora..."
-            nuevo_admin = Usuario(
-                username="administrador",
-                email="admin@eduforge.com",
-                password_hash=get_password_hash("james232"),
-                rol="administrador",
-                is_active=True
-            )
-            db.add(nuevo_admin)
-            db.commit()
-            db.refresh(nuevo_admin)
-            resultado["administrador_creado"] = True
-            resultado["nuevo_usuario"] = {
-                "id": nuevo_admin.id,
-                "username": nuevo_admin.username,
-                "email": nuevo_admin.email,
-                "rol": nuevo_admin.rol,
-                "activo": nuevo_admin.is_active
-            }
-        else:
-            resultado["accion"] = "Usuario 'administrador' YA existe"
-            resultado["administrador_creado"] = False
-
-            # Verificar y actualizar contraseña si es necesario
-            if not verify_password("james232", admin.password_hash):
-                resultado["password_actualizada"] = True
-                resultado["mensaje_password"] = "Contraseña incorrecta - ACTUALIZADA a 'james232'"
-                admin.password_hash = get_password_hash("james232")
-                db.commit()
-            else:
-                resultado["password_actualizada"] = False
-                resultado["mensaje_password"] = "Contraseña 'james232' es CORRECTA"
-
-            # Verificar que sea administrador
-            if admin.rol != "administrador":
-                resultado["rol_actualizado"] = True
-                resultado["mensaje_rol"] = f"Rol era '{admin.rol}' - ACTUALIZADO a 'administrador'"
-                admin.rol = "administrador"
-                db.commit()
-            else:
-                resultado["rol_actualizado"] = False
-                resultado["mensaje_rol"] = "Rol es 'administrador' - CORRECTO"
-
-            # Verificar que esté activo
-            if not admin.is_active:
-                resultado["activado"] = True
-                resultado["mensaje_activo"] = "Usuario estaba inactivo - ACTIVADO"
-                admin.is_active = True
-                db.commit()
-            else:
-                resultado["activado"] = False
-                resultado["mensaje_activo"] = "Usuario está activo - CORRECTO"
-
-        resultado["credenciales"] = {
-            "url": "http://localhost:3000/admin-panel/login",
-            "username": "administrador",
-            "password": "james232",
-            "codigo_acceso": "EDUFORGE2025"
-        }
-
-        resultado["instrucciones"] = "Usa las credenciales de arriba para acceder al panel de administración"
-
-        return resultado
-    finally:
-        db.close()
+# Endpoint de diagnóstico eliminado por seguridad
+# Las credenciales del superadmin se gestionan mediante variables de entorno
+# Para crear/actualizar el usuario superadmin, ejecuta:
+# python src/migrations/create_admin_panel_user.py

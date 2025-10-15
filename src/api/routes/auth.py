@@ -109,6 +109,39 @@ async def change_password(
     )
     return {"message": "Contraseña actualizada correctamente"}
 
+@router.put("/update-profile")
+async def update_profile(
+    profile_data: dict,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Actualiza el nombre y apellido del usuario actual
+
+    Args:
+        profile_data: Datos del perfil (nombre, apellido)
+        current_user: Usuario autenticado
+        db: Sesión de base de datos
+
+    Returns:
+        dict: Mensaje de confirmación y datos actualizados
+    """
+    nombre = profile_data.get("nombre", "").strip()
+    apellido = profile_data.get("apellido", "").strip()
+
+    # Actualizar usuario
+    current_user.nombre = nombre if nombre else None
+    current_user.apellido = apellido if apellido else None
+
+    db.commit()
+    db.refresh(current_user)
+
+    return {
+        "message": "Perfil actualizado correctamente",
+        "nombre": current_user.nombre,
+        "apellido": current_user.apellido
+    }
+
 @router.get("/users", response_model=List[UserResponse])
 async def list_users(
     db: Session = Depends(get_db),
@@ -165,4 +198,3 @@ async def logout(current_user: Usuario = Depends(get_current_user)):
         dict: Mensaje de confirmación
     """
     return {"message": "Sesión cerrada correctamente"}
-

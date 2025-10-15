@@ -5,9 +5,10 @@ from config import SessionLocal
 from models.user import Usuario
 from utils.security import decode_access_token
 from schemas.auth_schemas import TokenData
+from typing import Optional
 
 # Define el esquema OAuth2
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 
 def get_db():
     """
@@ -71,6 +72,33 @@ async def get_current_user(
 
     return user
 
+async def get_current_user_optional(
+    token: Optional[str] = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+) -> Optional[Usuario]:
+    """
+    Obtiene el usuario actual si hay token, sino retorna None
+    Útil para endpoints que funcionan con o sin autenticación
+    """
+    if not token:
+        return None
+
+    try:
+        payload = decode_access_token(token)
+        username: str = payload.get("sub")
+
+        if username is None:
+            return None
+
+        user = db.query(Usuario).filter(Usuario.username == username).first()
+
+        if user and user.is_active:
+            return user
+    except Exception:
+        pass
+
+    return None
+
 async def get_current_active_user(
     current_user: Usuario = Depends(get_current_user)
 ) -> Usuario:
@@ -108,10 +136,12 @@ async def require_admin(
     Raises:
         HTTPException: Si el usuario no es administrador
     """
-    if current_user.rol != "administrador":
+    from models.user import RolEnum
+
+    if current_user.rol != RolEnum.ADMINISTRADOR:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tienes permisos de administrador"
+            detail="Permisos insuficientes. Se requiere rol de administrador"
         )
     return current_user
 
@@ -136,4 +166,3 @@ async def require_docente_or_admin(
             detail="No tienes permisos suficientes"
         )
     return current_user
-

@@ -4,6 +4,7 @@ import IndividualAnalysis from "layouts/individual";
 import Notifications from "layouts/notifications";
 import SignIn from "layouts/authentication/sign-in";
 import Profile from "layouts/profile";
+import UploadHistory from "layouts/upload-history";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -45,6 +46,18 @@ const routes = [
     component: (
       <PrivateRoute>
         <Billing />
+      </PrivateRoute>
+    ),
+  },
+  {
+    type: "collapse",
+    name: "Historial de Cargas",
+    key: "upload-history",
+    icon: <Icon fontSize="small">history</Icon>,
+    route: "/historial",
+    component: (
+      <PrivateRoute>
+        <UploadHistory />
       </PrivateRoute>
     ),
   },

@@ -115,30 +115,48 @@ function UploadData() {
     setIsProcessing(true);
 
     try {
+      // Obtener el token de autenticación
+      const token = localStorage.getItem("token");
+
       // Paso 1: Subir el archivo
       const formData = new FormData();
       formData.append("file", rawFile);
 
       const uploadRes = await fetch(API_ENDPOINTS.UPLOAD, {
         method: "POST",
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: formData,
       });
+
       if (!uploadRes.ok) {
         throw new Error("Error al subir el archivo");
       }
+
       const uploadResult = await uploadRes.json();
+      console.log("📤 Upload result:", uploadResult);
+
       // Paso 2: Procesar el archivo para predicciones
       const cleanFilename = uploadResult.filename.trim();
+      const uploadId = uploadResult.upload_id; // Obtener el upload_id
+
       console.log("Filename limpio:", cleanFilename);
-      const predictRes = await fetch(
-        `${API_ENDPOINTS.PREDICT}?filename=${encodeURIComponent(cleanFilename)}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      console.log("Upload ID:", uploadId);
+
+      // Construir URL con parámetros
+      let predictUrl = `${API_ENDPOINTS.PREDICT}?filename=${encodeURIComponent(cleanFilename)}`;
+      if (uploadId) {
+        predictUrl += `&upload_id=${uploadId}`;
+      }
+
+      const predictRes = await fetch(predictUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+      });
 
       if (!predictRes.ok) {
         throw new Error("Error al procesar el archivo");
@@ -146,12 +164,13 @@ function UploadData() {
 
       const predictions = await predictRes.json();
       console.log("🔍 Predictions recibidas:", predictions.predictions?.length, "registros");
+      console.log("✅ Carga guardada en historial con ID:", uploadId);
 
       console.log("🔄 REDIRECCIÓN INMEDIATA a /resultados-completos...");
 
       // Guardar datos procesados para que estén disponibles en Resultados completos
       localStorage.setItem("latest_predictions", JSON.stringify(predictions.predictions));
-      localStorage.setItem("csv_upload_timestamp", new Date().toISOString()); // Agregar timestamp
+      localStorage.setItem("csv_upload_timestamp", new Date().toISOString());
       localStorage.setItem("csv_uploaded", Date.now().toString());
       localStorage.setItem("fromUpload", "true");
 

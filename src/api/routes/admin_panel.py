@@ -103,8 +103,16 @@ async def get_all_users_admin(
 ):
     """
     Obtener lista de todos los usuarios desde el panel de administración
+    EXCLUYE al usuario superadmin por seguridad
     """
-    users = db.query(Usuario).all()
+    # Obtener el username del superadmin desde variables de entorno
+    SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
+
+    # Filtrar usuarios excluyendo al superadmin
+    users = db.query(Usuario).filter(
+        Usuario.username != SUPERADMIN_USERNAME
+    ).all()
+
     return users
 
 
@@ -175,12 +183,21 @@ async def update_user_admin(
 ):
     """
     Actualizar un usuario existente desde el panel de administración
+    NO permite modificar al usuario superadmin
     """
     user = db.query(Usuario).filter(Usuario.id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuario no encontrado"
+        )
+
+    # Verificar que no sea el superadmin
+    SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
+    if user.username == SUPERADMIN_USERNAME:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No se puede modificar este usuario"
         )
 
     # Verificar si el nuevo username ya está en uso (si se cambió)
@@ -245,6 +262,7 @@ async def delete_user_admin(
 ):
     """
     Eliminar un usuario desde el panel de administración
+    El superadmin puede eliminar otros usuarios, pero no puede eliminarse a sí mismo
     """
     user = db.query(Usuario).filter(Usuario.id == user_id).first()
     if not user:
@@ -253,6 +271,15 @@ async def delete_user_admin(
             detail="Usuario no encontrado"
         )
 
+    # Verificar que no sea el superadmin intentando eliminarse a sí mismo
+    SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
+    if user.username == SUPERADMIN_USERNAME:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No se puede eliminar el usuario superadmin del sistema. Este usuario es crítico para el funcionamiento del panel de administración."
+        )
+
+    # El superadmin puede eliminar cualquier otro usuario (incluyendo 'admin')
     db.delete(user)
     db.commit()
 

@@ -25,17 +25,12 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import ReportsBarChart from "examples/Charts/BarCharts/ReportsBarChart";
 import ReportsLineChart from "examples/Charts/LineCharts/ReportsLineChart";
-import ComplexStatisticsCard from "examples/Cards/StatisticsCards/ComplexStatisticsCard";
-
-// Data
-import reportsBarChartDataDefault from "layouts/dashboard/data/reportsBarChartData";
-import reportsLineChartDataDefault from "layouts/dashboard/data/reportsLineChartData";
 
 // Dashboard components
 import Projects from "layouts/dashboard/components/Projects";
 import OrdersOverview from "layouts/dashboard/components/OrdersOverview";
 import MediumRiskStudents from "layouts/dashboard/components/MediumRiskStudents";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MDAlert from "components/MDAlert";
 import MDButton from "components/MDButton";
@@ -81,8 +76,8 @@ function Dashboard() {
     }
   };
 
-  // Función para cargar datos de asistencia
-  const loadAttendanceData = () => {
+  // Función para cargar datos de asistencia (envuelta en useCallback)
+  const loadAttendanceData = useCallback(() => {
     // Verificar si hay datos válidos primero
     if (!hasValidCsvData()) {
       console.log("📭 No hay CSV cargado, no se cargarán datos de asistencia");
@@ -140,10 +135,10 @@ function Dashboard() {
           ],
         });
       });
-  };
+  }, []); // Sin dependencias porque usa estados locales y funciones estables
 
-  // Función para cargar resumen de riesgo
-  const loadRiskData = () => {
+  // Función para cargar resumen de riesgo (envuelta en useCallback)
+  const loadRiskData = useCallback(() => {
     // Verificar si hay datos válidos primero
     if (!hasValidCsvData()) {
       console.log("📭 No hay CSV cargado, no se cargarán datos de riesgo");
@@ -220,7 +215,7 @@ function Dashboard() {
         });
         setLoading(false);
       });
-  };
+  }, []); // Sin dependencias porque usa estados locales y funciones estables
 
   useEffect(() => {
     // Mostrar notificación si se viene desde la carga de CSV
@@ -267,7 +262,8 @@ function Dashboard() {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("csvUploaded", handleCsvUploaded);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadAttendanceData, loadRiskData, location.state?.message]);
 
   if (error) return <div style={{ color: "red", fontWeight: "bold" }}>{error}</div>;
   if (loading) return <div>Cargando datos del CSV...</div>;

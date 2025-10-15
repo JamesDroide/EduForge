@@ -4,7 +4,7 @@
 =========================================================
 */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 // @mui material components
@@ -26,15 +26,27 @@ import Footer from "examples/Footer";
 // Auth Context
 import { useAuth } from "context/AuthContext";
 import { API_ENDPOINTS } from "config/api";
+import api from "config/api";
 
 // Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
 function Profile() {
   const navigate = useNavigate();
-  const { user, logout, getToken } = useAuth();
+  const { user, logout, getToken, updateUser } = useAuth();
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
+
+  // Verificar si el usuario puede cambiar su contraseña
+  // Los docentes y administradores NO pueden cambiar su contraseña desde aquí
+  const canChangePassword = user?.rol !== "docente" && user?.rol !== "administrador";
+
+  // Estados para información personal
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState("");
+  const [profileError, setProfileError] = useState("");
 
   // Estados para cambio de contraseña
   const [oldPassword, setOldPassword] = useState("");
@@ -43,6 +55,40 @@ function Profile() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+
+  // Cargar datos del usuario al montar
+  useEffect(() => {
+    if (user) {
+      setNombre(user.nombre || "");
+      setApellido(user.apellido || "");
+    }
+  }, [user]);
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setProfileError("");
+    setProfileSuccess("");
+    setLoadingProfile(true);
+
+    try {
+      const response = await api.put("/auth/update-profile", {
+        nombre,
+        apellido,
+      });
+
+      if (response.data) {
+        setProfileSuccess("Perfil actualizado exitosamente");
+        // Actualizar el contexto de usuario
+        if (updateUser) {
+          updateUser({ ...user, nombre, apellido });
+        }
+      }
+    } catch (err) {
+      setProfileError(err.response?.data?.detail || "Error al actualizar el perfil");
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -110,7 +156,7 @@ function Profile() {
       <MDBox mt={4} mb={3}>
         <Grid container spacing={3}>
           {/* Información del Usuario */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={canChangePassword ? 6 : 12}>
             <Card
               sx={{
                 backgroundColor: darkMode ? "transparent" : "white",
@@ -133,7 +179,63 @@ function Profile() {
                 </MDTypography>
               </MDBox>
               <MDBox pt={4} pb={3} px={3}>
-                <MDBox component="form" role="form">
+                {profileSuccess && (
+                  <MDAlert color="success" dismissible onClose={() => setProfileSuccess("")}>
+                    {profileSuccess}
+                  </MDAlert>
+                )}
+                {profileError && (
+                  <MDAlert color="error" dismissible onClose={() => setProfileError("")}>
+                    {profileError}
+                  </MDAlert>
+                )}
+                <MDBox component="form" role="form" onSubmit={handleUpdateProfile}>
+                  {/* Campos editables de nombre y apellido */}
+                  <MDBox mb={2}>
+                    <MDTypography
+                      variant="caption"
+                      color={darkMode ? "white" : "text"}
+                      fontWeight="bold"
+                    >
+                      Nombre
+                    </MDTypography>
+                    <MDInput
+                      type="text"
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      placeholder="Ingresa tu nombre"
+                      fullWidth
+                    />
+                  </MDBox>
+                  <MDBox mb={2}>
+                    <MDTypography
+                      variant="caption"
+                      color={darkMode ? "white" : "text"}
+                      fontWeight="bold"
+                    >
+                      Apellido
+                    </MDTypography>
+                    <MDInput
+                      type="text"
+                      value={apellido}
+                      onChange={(e) => setApellido(e.target.value)}
+                      placeholder="Ingresa tu apellido"
+                      fullWidth
+                    />
+                  </MDBox>
+                  <MDBox mb={3}>
+                    <MDButton
+                      variant="gradient"
+                      color="success"
+                      fullWidth
+                      type="submit"
+                      disabled={loadingProfile}
+                    >
+                      {loadingProfile ? "Actualizando..." : "Actualizar Perfil"}
+                    </MDButton>
+                  </MDBox>
+
+                  {/* Campos de solo lectura */}
                   <MDBox mb={2}>
                     <MDTypography
                       variant="caption"
@@ -151,23 +253,12 @@ function Profile() {
                         "& .MuiInputBase-root": {
                           backgroundColor: darkMode ? "#1a2035 !important" : "white !important",
                         },
-                        "& .MuiInputBase-input": {
-                          color: darkMode ? "#ffffff !important" : "rgba(0, 0, 0, 0.87) !important",
-                          WebkitTextFillColor: darkMode
-                            ? "#ffffff !important"
-                            : "rgba(0, 0, 0, 0.87) !important",
-                        },
                         "& .MuiInputBase-input.Mui-disabled": {
                           WebkitTextFillColor: darkMode
                             ? "#ffffff !important"
                             : "rgba(0, 0, 0, 0.6) !important",
                           color: darkMode ? "#ffffff !important" : "rgba(0, 0, 0, 0.6) !important",
                           opacity: "1 !important",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode
-                            ? "rgba(255, 255, 255, 0.3) !important"
-                            : "rgba(0, 0, 0, 0.23) !important",
                         },
                       }}
                     />
@@ -189,23 +280,12 @@ function Profile() {
                         "& .MuiInputBase-root": {
                           backgroundColor: darkMode ? "#1a2035 !important" : "white !important",
                         },
-                        "& .MuiInputBase-input": {
-                          color: darkMode ? "#ffffff !important" : "rgba(0, 0, 0, 0.87) !important",
-                          WebkitTextFillColor: darkMode
-                            ? "#ffffff !important"
-                            : "rgba(0, 0, 0, 0.87) !important",
-                        },
                         "& .MuiInputBase-input.Mui-disabled": {
                           WebkitTextFillColor: darkMode
                             ? "#ffffff !important"
                             : "rgba(0, 0, 0, 0.6) !important",
                           color: darkMode ? "#ffffff !important" : "rgba(0, 0, 0, 0.6) !important",
                           opacity: "1 !important",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode
-                            ? "rgba(255, 255, 255, 0.3) !important"
-                            : "rgba(0, 0, 0, 0.23) !important",
                         },
                       }}
                     />
@@ -227,23 +307,12 @@ function Profile() {
                         "& .MuiInputBase-root": {
                           backgroundColor: darkMode ? "#1a2035 !important" : "white !important",
                         },
-                        "& .MuiInputBase-input": {
-                          color: darkMode ? "#ffffff !important" : "rgba(0, 0, 0, 0.87) !important",
-                          WebkitTextFillColor: darkMode
-                            ? "#ffffff !important"
-                            : "rgba(0, 0, 0, 0.87) !important",
-                        },
                         "& .MuiInputBase-input.Mui-disabled": {
                           WebkitTextFillColor: darkMode
                             ? "#ffffff !important"
                             : "rgba(0, 0, 0, 0.6) !important",
                           color: darkMode ? "#ffffff !important" : "rgba(0, 0, 0, 0.6) !important",
                           opacity: "1 !important",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode
-                            ? "rgba(255, 255, 255, 0.3) !important"
-                            : "rgba(0, 0, 0, 0.23) !important",
                         },
                       }}
                     />
@@ -265,23 +334,12 @@ function Profile() {
                         "& .MuiInputBase-root": {
                           backgroundColor: darkMode ? "#1a2035 !important" : "white !important",
                         },
-                        "& .MuiInputBase-input": {
-                          color: darkMode ? "#ffffff !important" : "rgba(0, 0, 0, 0.87) !important",
-                          WebkitTextFillColor: darkMode
-                            ? "#ffffff !important"
-                            : "rgba(0, 0, 0, 0.87) !important",
-                        },
                         "& .MuiInputBase-input.Mui-disabled": {
                           WebkitTextFillColor: darkMode
                             ? "#ffffff !important"
                             : "rgba(0, 0, 0, 0.6) !important",
                           color: darkMode ? "#ffffff !important" : "rgba(0, 0, 0, 0.6) !important",
                           opacity: "1 !important",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode
-                            ? "rgba(255, 255, 255, 0.3) !important"
-                            : "rgba(0, 0, 0, 0.23) !important",
                         },
                       }}
                     />
@@ -296,142 +354,144 @@ function Profile() {
             </Card>
           </Grid>
 
-          {/* Cambio de Contraseña */}
-          <Grid item xs={12} md={6}>
-            <Card
-              sx={{
-                backgroundColor: darkMode ? "transparent" : "white",
-                backgroundImage: darkMode ? "none" : undefined,
-              }}
-            >
-              <MDBox
-                variant="gradient"
-                bgColor="warning"
-                borderRadius="lg"
-                coloredShadow="warning"
-                mx={2}
-                mt={-3}
-                p={3}
-                mb={1}
-                textAlign="center"
+          {/* Cambio de Contraseña - Solo para usuarios que no sean docentes ni administradores */}
+          {canChangePassword && (
+            <Grid item xs={12} md={6}>
+              <Card
+                sx={{
+                  backgroundColor: darkMode ? "transparent" : "white",
+                  backgroundImage: darkMode ? "none" : undefined,
+                }}
               >
-                <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
-                  Cambiar Contraseña
-                </MDTypography>
-              </MDBox>
-              <MDBox pt={4} pb={3} px={3}>
-                {error && (
-                  <MDBox mb={2}>
-                    <MDAlert color="error" dismissible onClose={() => setError("")}>
-                      {error}
-                    </MDAlert>
-                  </MDBox>
-                )}
-                {success && (
-                  <MDBox mb={2}>
-                    <MDAlert color="success" dismissible onClose={() => setSuccess("")}>
-                      {success}
-                    </MDAlert>
-                  </MDBox>
-                )}
+                <MDBox
+                  variant="gradient"
+                  bgColor="warning"
+                  borderRadius="lg"
+                  coloredShadow="warning"
+                  mx={2}
+                  mt={-3}
+                  p={3}
+                  mb={1}
+                  textAlign="center"
+                >
+                  <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
+                    Cambiar Contraseña
+                  </MDTypography>
+                </MDBox>
+                <MDBox pt={4} pb={3} px={3}>
+                  {error && (
+                    <MDBox mb={2}>
+                      <MDAlert color="error" dismissible onClose={() => setError("")}>
+                        {error}
+                      </MDAlert>
+                    </MDBox>
+                  )}
+                  {success && (
+                    <MDBox mb={2}>
+                      <MDAlert color="success" dismissible onClose={() => setSuccess("")}>
+                        {success}
+                      </MDAlert>
+                    </MDBox>
+                  )}
 
-                <MDBox component="form" role="form" onSubmit={handleChangePassword}>
-                  <MDBox mb={2}>
-                    <MDInput
-                      type="password"
-                      label="Contraseña Actual"
-                      fullWidth
-                      value={oldPassword}
-                      onChange={(e) => setOldPassword(e.target.value)}
-                      disabled={loading}
-                      sx={{
-                        "& .MuiInputBase-root": {
-                          backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "white",
-                          color: darkMode ? "white" : "inherit",
-                        },
-                        "& .MuiInputBase-input": {
-                          color: darkMode ? "white !important" : "inherit",
-                        },
-                        "& .MuiInputLabel-root": {
-                          color: darkMode ? "rgba(255, 255, 255, 0.7)" : "inherit",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode
-                            ? "rgba(255, 255, 255, 0.3)"
-                            : "rgba(0, 0, 0, 0.23)",
-                        },
-                      }}
-                    />
-                  </MDBox>
-                  <MDBox mb={2}>
-                    <MDInput
-                      type="password"
-                      label="Nueva Contraseña"
-                      fullWidth
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      disabled={loading}
-                      sx={{
-                        "& .MuiInputBase-root": {
-                          backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "white",
-                          color: darkMode ? "white" : "inherit",
-                        },
-                        "& .MuiInputBase-input": {
-                          color: darkMode ? "white !important" : "inherit",
-                        },
-                        "& .MuiInputLabel-root": {
-                          color: darkMode ? "rgba(255, 255, 255, 0.7)" : "inherit",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode
-                            ? "rgba(255, 255, 255, 0.3)"
-                            : "rgba(0, 0, 0, 0.23)",
-                        },
-                      }}
-                    />
-                  </MDBox>
-                  <MDBox mb={2}>
-                    <MDInput
-                      type="password"
-                      label="Confirmar Nueva Contraseña"
-                      fullWidth
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      disabled={loading}
-                      sx={{
-                        "& .MuiInputBase-root": {
-                          backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "white",
-                          color: darkMode ? "white" : "inherit",
-                        },
-                        "& .MuiInputBase-input": {
-                          color: darkMode ? "white !important" : "inherit",
-                        },
-                        "& .MuiInputLabel-root": {
-                          color: darkMode ? "rgba(255, 255, 255, 0.7)" : "inherit",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          borderColor: darkMode
-                            ? "rgba(255, 255, 255, 0.3)"
-                            : "rgba(0, 0, 0, 0.23)",
-                        },
-                      }}
-                    />
-                  </MDBox>
-                  <MDBox mt={4}>
-                    <MDButton
-                      variant="gradient"
-                      color="warning"
-                      fullWidth
-                      type="submit"
-                      disabled={loading}
-                    >
-                      {loading ? "Cambiando..." : "Cambiar Contraseña"}
-                    </MDButton>
+                  <MDBox component="form" role="form" onSubmit={handleChangePassword}>
+                    <MDBox mb={2}>
+                      <MDInput
+                        type="password"
+                        label="Contraseña Actual"
+                        fullWidth
+                        value={oldPassword}
+                        onChange={(e) => setOldPassword(e.target.value)}
+                        disabled={loading}
+                        sx={{
+                          "& .MuiInputBase-root": {
+                            backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "white",
+                            color: darkMode ? "white" : "inherit",
+                          },
+                          "& .MuiInputBase-input": {
+                            color: darkMode ? "white !important" : "inherit",
+                          },
+                          "& .MuiInputLabel-root": {
+                            color: darkMode ? "rgba(255, 255, 255, 0.7)" : "inherit",
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode
+                              ? "rgba(255, 255, 255, 0.3)"
+                              : "rgba(0, 0, 0, 0.23)",
+                          },
+                        }}
+                      />
+                    </MDBox>
+                    <MDBox mb={2}>
+                      <MDInput
+                        type="password"
+                        label="Nueva Contraseña"
+                        fullWidth
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        disabled={loading}
+                        sx={{
+                          "& .MuiInputBase-root": {
+                            backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "white",
+                            color: darkMode ? "white" : "inherit",
+                          },
+                          "& .MuiInputBase-input": {
+                            color: darkMode ? "white !important" : "inherit",
+                          },
+                          "& .MuiInputLabel-root": {
+                            color: darkMode ? "rgba(255, 255, 255, 0.7)" : "inherit",
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode
+                              ? "rgba(255, 255, 255, 0.3)"
+                              : "rgba(0, 0, 0, 0.23)",
+                          },
+                        }}
+                      />
+                    </MDBox>
+                    <MDBox mb={2}>
+                      <MDInput
+                        type="password"
+                        label="Confirmar Nueva Contraseña"
+                        fullWidth
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={loading}
+                        sx={{
+                          "& .MuiInputBase-root": {
+                            backgroundColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "white",
+                            color: darkMode ? "white" : "inherit",
+                          },
+                          "& .MuiInputBase-input": {
+                            color: darkMode ? "white !important" : "inherit",
+                          },
+                          "& .MuiInputLabel-root": {
+                            color: darkMode ? "rgba(255, 255, 255, 0.7)" : "inherit",
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: darkMode
+                              ? "rgba(255, 255, 255, 0.3)"
+                              : "rgba(0, 0, 0, 0.23)",
+                          },
+                        }}
+                      />
+                    </MDBox>
+                    <MDBox mt={4}>
+                      <MDButton
+                        variant="gradient"
+                        color="warning"
+                        fullWidth
+                        type="submit"
+                        disabled={loading}
+                      >
+                        {loading ? "Cambiando..." : "Cambiar Contraseña"}
+                      </MDButton>
+                    </MDBox>
                   </MDBox>
                 </MDBox>
-              </MDBox>
-            </Card>
-          </Grid>
+              </Card>
+            </Grid>
+          )}
         </Grid>
       </MDBox>
       <Footer />

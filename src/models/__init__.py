@@ -5,6 +5,9 @@ import datetime
 # Importar el modelo de Usuario
 from models.user import Usuario
 
+# Importar los modelos de historial de cargas
+from models.upload_history import UploadHistory, UploadPrediction
+
 class ResultadoPrediccion(Base):
     __tablename__ = 'resultados_prediccion'
     id = Column(Integer, primary_key=True, autoincrement=True)

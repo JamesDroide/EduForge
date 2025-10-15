@@ -13,3 +13,4 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-dotenv
 email-validator
+openpyxl

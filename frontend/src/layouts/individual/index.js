@@ -523,6 +523,7 @@ function IndividualAnalysis() {
                       />
                     )}
                     renderOption={(props, option) => (
+                      // eslint-disable-next-line react/jsx-props-no-spreading
                       <li {...props}>
                         <MDBox display="flex" alignItems="center">
                           <MDAvatar

@@ -116,7 +116,6 @@ export const useStudentsCache = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasValidData, setHasValidData] = useState(false);
-  const [lastUploadTimestamp, setLastUploadTimestamp] = useState(null);
 
   const fetchStudents = async (forceRefresh = false) => {
     setLoading(true);
@@ -140,31 +139,17 @@ export const useStudentsCache = () => {
     const handleStorageChange = (e) => {
       if (e.key === "latest_predictions" || e.key === "csv_uploaded") {
         console.log("🔄 Detectado cambio en localStorage, invalidando caché...");
-        studentsCache.invalidate(); // Invalidar caché antes de recargar
-        fetchStudents(true); // Forzar refresh completo
-      }
-    };
-
-    // Escuchar eventos personalizados para invalidación inmediata
-    const handleCsvUploaded = (event) => {
-      console.log("🆕 Nuevo CSV detectado, actualizando datos...");
-      studentsCache.invalidate();
-      fetchStudents(true);
-    };
-
-    // Verificar cambios en el timestamp de upload periódicamente
-    const checkForUpdates = () => {
-      const currentTimestamp = localStorage.getItem("csv_upload_timestamp");
-      if (currentTimestamp && currentTimestamp !== lastUploadTimestamp) {
-        console.log("📅 Timestamp de CSV actualizado, recargando datos...");
-        setLastUploadTimestamp(currentTimestamp);
         studentsCache.invalidate();
         fetchStudents(true);
       }
     };
 
-    // Verificar updates cada 2 segundos
-    const intervalId = setInterval(checkForUpdates, 2000);
+    // Escuchar eventos personalizados para invalidación inmediata
+    const handleCsvUploaded = () => {
+      console.log("🆕 Nuevo CSV detectado, actualizando datos...");
+      studentsCache.invalidate();
+      fetchStudents(true);
+    };
 
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("csvUploaded", handleCsvUploaded);
@@ -172,9 +157,8 @@ export const useStudentsCache = () => {
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("csvUploaded", handleCsvUploaded);
-      clearInterval(intervalId);
     };
-  }, [lastUploadTimestamp]);
+  }, []); // Sin dependencias ya que fetchStudents se define dentro del componente
 
   return {
     students,
