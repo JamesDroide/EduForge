@@ -142,10 +142,27 @@ async def create_user_admin(
     """
     Crear un nuevo usuario desde el panel de administración
     """
+    import logging
+    from sqlalchemy import inspect, text
+    logger = logging.getLogger(__name__)
+
     try:
+        # VERIFICACIÓN: Asegurar que la tabla usuarios existe
+        inspector = inspect(db.bind)
+        if 'usuarios' not in inspector.get_table_names():
+            logger.error("❌ CRÍTICO: La tabla 'usuarios' no existe en la base de datos")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error de configuración: La tabla de usuarios no existe en la base de datos"
+            )
+
+        logger.info(f"🔵 Iniciando creación de usuario: {user_data.username}")
+        logger.info(f"🔵 Conexión BD: {db.bind.url.database} en {db.bind.url.host}")
+
         # Verificar si el usuario ya existe
         existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
         if existing_user:
+            logger.warning(f"⚠️ Usuario ya existe: {user_data.username}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El nombre de usuario ya está en uso"
@@ -154,12 +171,14 @@ async def create_user_admin(
         # Verificar si el email ya existe
         existing_email = db.query(Usuario).filter(Usuario.email == user_data.email).first()
         if existing_email:
+            logger.warning(f"⚠️ Email ya existe: {user_data.email}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El correo electrónico ya está en uso"
             )
 
         # Crear el nuevo usuario
+        logger.info(f"🔵 Creando objeto Usuario para: {user_data.username}")
         hashed_password = get_password_hash(user_data.password)
         new_user = Usuario(
             username=user_data.username,
@@ -169,24 +188,51 @@ async def create_user_admin(
             is_active=user_data.is_active
         )
 
+        logger.info(f"🔵 Agregando usuario a la sesión...")
         db.add(new_user)
-        db.flush()  # Forzar escritura a BD antes del commit
-        db.commit()
-        db.refresh(new_user)
 
-        # Verificar que realmente se guardó
-        verification = db.query(Usuario).filter(Usuario.id == new_user.id).first()
-        if not verification:
-            raise Exception("El usuario no se guardó correctamente en la base de datos")
+        logger.info(f"🔵 Ejecutando flush...")
+        db.flush()  # Forzar escritura a BD antes del commit
+        logger.info(f"✅ Flush exitoso - Usuario tiene ID: {new_user.id}")
+
+        logger.info(f"🔵 Ejecutando commit...")
+        db.commit()
+        logger.info(f"✅ Commit exitoso")
+
+        # VERIFICACIÓN CRÍTICA: Usar una nueva sesión para verificar persistencia
+        logger.info(f"🔵 Verificando persistencia con nueva sesión...")
+        from config import SessionLocal
+        verify_db = SessionLocal()
+        try:
+            verification = verify_db.query(Usuario).filter(Usuario.id == new_user.id).first()
+            if not verification:
+                logger.error(f"❌ ERROR CRÍTICO: Usuario con ID {new_user.id} no encontrado en nueva sesión!")
+                raise Exception("El usuario no se guardó correctamente en la base de datos")
+            logger.info(f"✅ Usuario verificado en BD con ID: {verification.id}")
+
+            # Verificación adicional con SQL directo
+            result = verify_db.execute(text(f"SELECT COUNT(*) FROM usuarios WHERE id = {new_user.id}"))
+            count = result.scalar()
+            logger.info(f"✅ Verificación SQL directa: {count} registros encontrados")
+        finally:
+            verify_db.close()
+
+        logger.info(f"🔵 Refrescando objeto original...")
+        db.refresh(new_user)
+        logger.info(f"✅ Refresh exitoso")
+
+        logger.info(f"✅✅✅ USUARIO CREADO EXITOSAMENTE: {new_user.username} (ID: {new_user.id})")
 
         return new_user
 
     except HTTPException:
         # Re-lanzar excepciones HTTP
+        logger.error(f"❌ HTTPException al crear usuario")
         db.rollback()
         raise
     except Exception as e:
         # Hacer rollback en caso de cualquier otro error
+        logger.error(f"❌ ERROR CRÍTICO al crear usuario: {str(e)}", exc_info=True)
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

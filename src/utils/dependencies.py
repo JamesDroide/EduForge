@@ -6,6 +6,10 @@ from models.user import Usuario
 from utils.security import decode_access_token
 from schemas.auth_schemas import TokenData
 from typing import Optional
+import logging
+
+# Configurar logging
+logger = logging.getLogger(__name__)
 
 # Define el esquema OAuth2
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
@@ -13,6 +17,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 def get_db():
     """
     Dependency para obtener la sesión de base de datos
+    Con manejo robusto de transacciones
 
     Yields:
         Session: Sesión de SQLAlchemy
@@ -20,6 +25,10 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception as e:
+        logger.error(f"Error en la sesión de BD: {str(e)}")
+        db.rollback()
+        raise
     finally:
         db.close()
 

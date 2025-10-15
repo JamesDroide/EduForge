@@ -23,7 +23,12 @@ engine = create_engine(
 )
 
 # Crear la sesión de base de datos
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine,
+    expire_on_commit=False
+)
 
 # Declarar la base para los modelos
 Base = declarative_base()

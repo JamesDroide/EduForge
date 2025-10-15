@@ -11,16 +11,32 @@ import os
 import time
 from api.routes import dashboard_attendance, dashboard_risk, auth, users, admin_panel, upload_history, db_admin
 from config import Base, engine, SessionLocal
-from models import ResultadoPrediccion
-from utils.dependencies import get_current_user_optional
+
+# IMPORTANTE: Importar TODOS los modelos ANTES de crear las tablas
 from models.user import Usuario
+from models.upload_history import UploadHistory, UploadPrediction
+from models import ResultadoPrediccion, StudentData
+
+from utils.dependencies import get_current_user_optional
 
 # Ejecutar migraciones automáticas al iniciar
 from migrations.auto_migrate import run_migrations
 run_migrations()
 
 # Crear todas las tablas en la base de datos
+# Esto asegura que Usuario, UploadHistory, etc. existan
+print("🔄 Creando tablas en la base de datos...")
 Base.metadata.create_all(engine)
+print("✅ Tablas creadas/verificadas correctamente")
+
+# Verificar que la tabla usuarios existe
+from sqlalchemy import inspect
+inspector = inspect(engine)
+tables = inspector.get_table_names()
+if 'usuarios' in tables:
+    print("✅ Tabla 'usuarios' confirmada en la base de datos")
+else:
+    print("❌ ERROR: Tabla 'usuarios' NO existe en la base de datos")
 
 # ✅ CORRECCIÓN: Limpiar variables globales al iniciar el servidor
 # Esto asegura que no se muestren datos viejos de la BD hasta que se cargue un CSV
