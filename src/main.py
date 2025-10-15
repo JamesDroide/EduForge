@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 import pandas as pd
 import os
 import time
-from api.routes import dashboard_attendance, dashboard_risk, auth, users, admin_panel, upload_history
+from api.routes import dashboard_attendance, dashboard_risk, auth, users, admin_panel, upload_history, db_admin
 from config import Base, engine, SessionLocal
 from models import ResultadoPrediccion
 from utils.dependencies import get_current_user_optional
@@ -35,6 +35,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
 app.include_router(admin_panel.router, tags=["Panel de Administración"])
 app.include_router(users.router, prefix="/api", tags=["Gestión de Usuarios"])
 app.include_router(upload_history.router, prefix="/api", tags=["Historial de Cargas"])
+app.include_router(db_admin.router, prefix="/api", tags=["Administración de Base de Datos"])
 app.include_router(dashboard_attendance.router, prefix="/dashboard_attendance")
 app.include_router(dashboard_risk.router, prefix="/dashboard_risk")
 
