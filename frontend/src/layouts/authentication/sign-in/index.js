@@ -10,7 +10,6 @@ import { useNavigate } from "react-router-dom";
 // @mui material components
 import Card from "@mui/material/Card";
 import Switch from "@mui/material/Switch";
-import MuiLink from "@mui/material/Link";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -139,21 +138,6 @@ function SignIn() {
               <MDButton variant="gradient" color="info" fullWidth type="submit" disabled={loading}>
                 {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
               </MDButton>
-            </MDBox>
-            <MDBox mt={3} mb={1} textAlign="center">
-              <MDTypography variant="button" color="text">
-                ¿Olvidaste tu contraseña?{" "}
-                <MDTypography
-                  component={MuiLink}
-                  variant="button"
-                  color="info"
-                  fontWeight="medium"
-                  textGradient
-                  sx={{ cursor: "pointer" }}
-                >
-                  Recuperar
-                </MDTypography>
-              </MDTypography>
             </MDBox>
           </MDBox>
         </MDBox>

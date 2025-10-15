@@ -262,8 +262,7 @@ function Dashboard() {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("csvUploaded", handleCsvUploaded);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadAttendanceData, loadRiskData, location.state?.message]);
+  }, [loadAttendanceData, loadRiskData, location.state]);
 
   if (error) return <div style={{ color: "red", fontWeight: "bold" }}>{error}</div>;
   if (loading) return <div>Cargando datos del CSV...</div>;

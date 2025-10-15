@@ -142,37 +142,50 @@ async def create_user_admin(
     """
     Crear un nuevo usuario desde el panel de administración
     """
-    # Verificar si el usuario ya existe
-    existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El nombre de usuario ya está en uso"
+    try:
+        # Verificar si el usuario ya existe
+        existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El nombre de usuario ya está en uso"
+            )
+
+        # Verificar si el email ya existe
+        existing_email = db.query(Usuario).filter(Usuario.email == user_data.email).first()
+        if existing_email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El correo electrónico ya está en uso"
+            )
+
+        # Crear el nuevo usuario
+        hashed_password = get_password_hash(user_data.password)
+        new_user = Usuario(
+            username=user_data.username,
+            email=user_data.email,
+            password_hash=hashed_password,
+            rol=user_data.rol,
+            is_active=user_data.is_active
         )
 
-    # Verificar si el email ya existe
-    existing_email = db.query(Usuario).filter(Usuario.email == user_data.email).first()
-    if existing_email:
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        return new_user
+
+    except HTTPException:
+        # Re-lanzar excepciones HTTP
+        db.rollback()
+        raise
+    except Exception as e:
+        # Hacer rollback en caso de cualquier otro error
+        db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El correo electrónico ya está en uso"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al crear usuario: {str(e)}"
         )
-
-    # Crear el nuevo usuario
-    hashed_password = get_password_hash(user_data.password)
-    new_user = Usuario(
-        username=user_data.username,
-        email=user_data.email,
-        password_hash=hashed_password,
-        rol=user_data.rol,
-        is_active=user_data.is_active
-    )
-
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return new_user
 
 
 @router.put("/users/{user_id}", response_model=UserResponse)
@@ -185,51 +198,62 @@ async def update_user_admin(
     Actualizar un usuario existente desde el panel de administración
     NO permite modificar al usuario superadmin
     """
-    user = db.query(Usuario).filter(Usuario.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado"
-        )
-
-    # Verificar que no sea el superadmin
-    SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
-    if user.username == SUPERADMIN_USERNAME:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No se puede modificar este usuario"
-        )
-
-    # Verificar si el nuevo username ya está en uso (si se cambió)
-    if user_data.username and user_data.username != user.username:
-        existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
-        if existing_user:
+    try:
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        if not user:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El nombre de usuario ya está en uso"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuario no encontrado"
             )
-        user.username = user_data.username
 
-    # Verificar si el nuevo email ya está en uso (si se cambió)
-    if user_data.email and user_data.email != user.email:
-        existing_email = db.query(Usuario).filter(Usuario.email == user_data.email).first()
-        if existing_email:
+        # Verificar que no sea el superadmin
+        SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
+        if user.username == SUPERADMIN_USERNAME:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="El correo electrónico ya está en uso"
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No se puede modificar este usuario"
             )
-        user.email = user_data.email
 
-    # Actualizar otros campos
-    if user_data.rol is not None:
-        user.rol = user_data.rol
-    if user_data.is_active is not None:
-        user.is_active = user_data.is_active
+        # Verificar si el nuevo username ya está en uso (si se cambió)
+        if user_data.username and user_data.username != user.username:
+            existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
+            if existing_user:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El nombre de usuario ya está en uso"
+                )
+            user.username = user_data.username
 
-    db.commit()
-    db.refresh(user)
+        # Verificar si el nuevo email ya está en uso (si se cambió)
+        if user_data.email and user_data.email != user.email:
+            existing_email = db.query(Usuario).filter(Usuario.email == user_data.email).first()
+            if existing_email:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="El correo electrónico ya está en uso"
+                )
+            user.email = user_data.email
 
-    return user
+        # Actualizar otros campos
+        if user_data.rol is not None:
+            user.rol = user_data.rol
+        if user_data.is_active is not None:
+            user.is_active = user_data.is_active
+
+        db.commit()
+        db.refresh(user)
+
+        return user
+
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al actualizar usuario: {str(e)}"
+        )
 
 
 @router.post("/users/{user_id}/change-password")
@@ -241,18 +265,29 @@ async def change_user_password_admin(
     """
     Cambiar la contraseña de un usuario desde el panel de administración
     """
-    user = db.query(Usuario).filter(Usuario.id == user_id).first()
-    if not user:
+    try:
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuario no encontrado"
+            )
+
+        # Actualizar la contraseña
+        user.password_hash = get_password_hash(password_data.new_password)
+        db.commit()
+
+        return {"message": "Contraseña actualizada exitosamente"}
+
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al cambiar contraseña: {str(e)}"
         )
-
-    # Actualizar la contraseña
-    user.password_hash = get_password_hash(password_data.new_password)
-    db.commit()
-
-    return {"message": "Contraseña actualizada exitosamente"}
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -264,23 +299,34 @@ async def delete_user_admin(
     Eliminar un usuario desde el panel de administración
     El superadmin puede eliminar otros usuarios, pero no puede eliminarse a sí mismo
     """
-    user = db.query(Usuario).filter(Usuario.id == user_id).first()
-    if not user:
+    try:
+        user = db.query(Usuario).filter(Usuario.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Usuario no encontrado"
+            )
+
+        # Verificar que no sea el superadmin intentando eliminarse a sí mismo
+        SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
+        if user.username == SUPERADMIN_USERNAME:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No se puede eliminar el usuario superadmin del sistema. Este usuario es crítico para el funcionamiento del panel de administración."
+            )
+
+        # El superadmin puede eliminar cualquier otro usuario (incluyendo 'admin')
+        db.delete(user)
+        db.commit()
+
+        return None
+
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception as e:
+        db.rollback()
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al eliminar usuario: {str(e)}"
         )
-
-    # Verificar que no sea el superadmin intentando eliminarse a sí mismo
-    SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
-    if user.username == SUPERADMIN_USERNAME:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No se puede eliminar el usuario superadmin del sistema. Este usuario es crítico para el funcionamiento del panel de administración."
-        )
-
-    # El superadmin puede eliminar cualquier otro usuario (incluyendo 'admin')
-    db.delete(user)
-    db.commit()
-
-    return None
