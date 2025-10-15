@@ -24,6 +24,9 @@ import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
 import MDProgress from "components/MDProgress";
 
+// API configuration
+import { API_BASE_URL } from "config/api";
+
 // Images - mantener las imágenes por defecto para estudiantes sin foto específica
 import logoXD from "assets/images/juancito.jpg";
 import logoSlack from "assets/images/rochita.jpg";
@@ -47,7 +50,7 @@ export default function data() {
   const fetchStudentsAtRisk = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8000/dashboard_risk/students_at_risk");
+      const response = await fetch(`${API_BASE_URL}/dashboard_risk/students_at_risk`);
 
       if (!response.ok) {
         throw new Error("No se pudieron cargar los estudiantes en riesgo");

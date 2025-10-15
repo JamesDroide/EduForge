@@ -32,6 +32,9 @@ import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import MDAlert from "components/MDAlert";
 
+// API configuration
+import { API_BASE_URL } from "config/api";
+
 // Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
@@ -87,7 +90,7 @@ function UserManagement() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/admin/users", {
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
         headers: {
           Authorization: `Bearer ${getAdminToken()}`,
         },
@@ -164,8 +167,8 @@ function UserManagement() {
     try {
       const url =
         dialogMode === "create"
-          ? "http://localhost:8000/admin/users"
-          : `http://localhost:8000/admin/users/${selectedUser.id}`;
+          ? `${API_BASE_URL}/admin/users`
+          : `${API_BASE_URL}/admin/users/${selectedUser.id}`;
 
       const method = dialogMode === "create" ? "POST" : "PUT";
 
@@ -237,7 +240,7 @@ function UserManagement() {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/admin/users/${selectedUser.id}/change-password`,
+        `${API_BASE_URL}/admin/users/${selectedUser.id}/change-password`,
         {
           method: "POST",
           headers: {
@@ -264,11 +267,14 @@ function UserManagement() {
     }
   };
 
-  // Función para alternar el estado activo de un usuario
+  // Función para activar/desactivar usuario
   const handleToggleActive = async (user) => {
+    setError("");
+    setSuccess("");
     setLoading(true);
+
     try {
-      const response = await fetch(`http://localhost:8000/admin/users/${user.id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${user.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -283,7 +289,7 @@ function UserManagement() {
       });
 
       if (!response.ok) {
-        throw new Error("Error al actualizar el estado del usuario");
+        throw new Error("Error al cambiar el estado del usuario");
       }
 
       setSuccess(`Usuario ${!user.is_active ? "activado" : "desactivado"} exitosamente`);
@@ -295,15 +301,18 @@ function UserManagement() {
     }
   };
 
-  // Función para eliminar un usuario
+  // Función para eliminar usuario
   const handleDeleteUser = async (user) => {
     if (!window.confirm(`¿Estás seguro de eliminar al usuario ${user.username}?`)) {
       return;
     }
 
+    setError("");
+    setSuccess("");
     setLoading(true);
+
     try {
-      const response = await fetch(`http://localhost:8000/admin/users/${user.id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${user.id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${getAdminToken()}`,

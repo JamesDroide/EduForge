@@ -25,6 +25,9 @@ import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
 
+// API configuration
+import { API_BASE_URL } from "config/api";
+
 // Imagen por defecto para estudiantes
 import defaultStudentImage from "assets/images/Estudiante.jpg";
 
@@ -61,7 +64,7 @@ function Projects() {
         return;
       }
 
-      const response = await fetch("http://localhost:8000/dashboard_risk/students_at_risk");
+      const response = await fetch(`${API_BASE_URL}/dashboard_risk/students_at_risk`);
 
       if (!response.ok) {
         throw new Error("No se pudieron cargar los estudiantes en riesgo");
