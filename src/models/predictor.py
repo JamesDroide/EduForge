@@ -7,6 +7,7 @@ import time
 from config import SessionLocal
 from models import ResultadoPrediccion
 import numpy as np
+from datetime import datetime, date
 
 # Configuración de logging
 logging.basicConfig(level=logging.INFO)
@@ -163,7 +164,7 @@ def predict_desertion(file_path: str) -> List[Dict]:
             riesgo = classify_risk_level(probabilidad)
 
             # Procesar fecha correctamente del CSV
-            fecha_formateada = "2025-10-06"  # Fecha actual como defecto
+            fecha_obj = date(2025, 10, 6)  # Fecha actual como defecto
 
             if 'fecha' in row.index and pd.notna(row['fecha']):
                 try:
@@ -172,13 +173,16 @@ def predict_desertion(file_path: str) -> List[Dict]:
                         parts = fecha_original.split('/')
                         if len(parts) == 3:
                             # Formato DD/MM/YYYY
-                            dia = parts[0].zfill(2)
-                            mes = parts[1].zfill(2)
-                            año = parts[2]
-                            if len(año) == 2:
-                                año = f"20{año}" if int(año) < 50 else f"19{año}"
-                            fecha_formateada = f"{año}-{mes}-{dia}"
-                            logger.info(f"📅 Fecha procesada: {fecha_original} → {fecha_formateada}")
+                            dia = int(parts[0])
+                            mes = int(parts[1])
+                            año = int(parts[2])
+                            if año < 100:
+                                año = 2000 + año if año < 50 else 1900 + año
+                            fecha_obj = date(año, mes, dia)
+                            logger.info(f"📅 Fecha procesada: {fecha_original} → {fecha_obj}")
+                    elif '-' in fecha_original:
+                        # Formato YYYY-MM-DD
+                        fecha_obj = datetime.strptime(fecha_original, '%Y-%m-%d').date()
                 except Exception as e:
                     logger.warning(f"⚠️  Error procesando fecha {row.get('fecha')}: {e}")
 
@@ -228,7 +232,7 @@ def predict_desertion(file_path: str) -> List[Dict]:
             resultado_bd = ResultadoPrediccion(
                 id_estudiante=estudiante_id,
                 nombre=nombre,
-                nota=nota_final_value,  # Guardar en ambas columnas
+                nota=nota_final_value,
                 nota_final=nota_final_value,
                 conducta=conducta_value,
                 asistencia=asistencia_value,
@@ -236,7 +240,8 @@ def predict_desertion(file_path: str) -> List[Dict]:
                 tiempo_prediccion=tiempo_prediccion,
                 resultado_prediccion=str(prediccion),
                 riesgo_desercion=riesgo,
-                probabilidad_desercion=round(probabilidad, 4)
+                probabilidad_desercion=round(probabilidad, 4),
+                fecha=fecha_obj  # Usar objeto date, no string
             )
             session.add(resultado_bd)
 
@@ -249,7 +254,7 @@ def predict_desertion(file_path: str) -> List[Dict]:
                 "asistencia": asistencia_value,
                 "inasistencia": inasistencia_value,
                 "conducta": conducta_value,
-                "fecha": fecha_formateada,
+                "fecha": fecha_obj.strftime('%Y-%m-%d'),  # Convertir a string para el diccionario
                 "tiempo_prediccion": tiempo_prediccion,
                 "resultado_prediccion": str(prediccion),
                 "riesgo_desercion": riesgo,
