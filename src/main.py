@@ -5,19 +5,23 @@ from models.predictor import predict_desertion
 from services.risk_service import update_latest_predictions, clear_latest_predictions
 from services.attendance_service import update_attendance_data, clear_latest_csv_data
 from services.upload_history_service import UploadHistoryService
-from fastapi.responses import JSONResponse
 import pandas as pd
 import os
 import time
-from api.routes import dashboard_attendance, dashboard_risk, auth, users, admin_panel, upload_history, db_admin
+from api.routes import dashboard_attendance, dashboard_risk, users, admin_panel, upload_history, db_admin
 from config import Base, engine, SessionLocal
 
 # IMPORTANTE: Importar TODOS los modelos ANTES de crear las tablas
 from models.user import Usuario
-from models.upload_history import UploadHistory, UploadPrediction
-from models import ResultadoPrediccion, StudentData
 
 from utils.dependencies import get_current_user_optional
+
+# ==========================================
+# CLEAN ARCHITECTURE - Nuevas rutas v2
+# ==========================================
+from presentation.api.routes.prediction_routes import router as prediction_router
+from presentation.api.routes.auth_routes import router as auth_v2_router
+from presentation.api.routes.user_routes import router as user_v2_router
 
 # Ejecutar migraciones automáticas al iniciar
 from migrations.auto_migrate import run_migrations
@@ -44,12 +48,26 @@ clear_latest_predictions()
 clear_latest_csv_data()  # También limpiar datos de asistencia
 print("🔄 Servidor iniciado - Variables globales limpiadas")
 
-app = FastAPI(title="Eduforge API", version="1.0.0")
+app = FastAPI(
+    title="EduForge API - Unified",
+    version="2.0.0",
+    description="API para predicción de deserción estudiantil con Clean Architecture"
+)
 
+# ==========================================
+# RUTAS CLEAN ARCHITECTURE (Nuevas v2)
+# ==========================================
+app.include_router(prediction_router)    # /predictions/*
+app.include_router(auth_v2_router)       # /auth-v2/*
+app.include_router(user_v2_router)       # /users-v2/*
+
+# ==========================================
+# RUTAS LEGACY (Compatibilidad)
+# ==========================================
 # Incluir routers para los dashboards
-app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
+# app.include_router(auth.router, prefix="/auth", tags=["Autenticación Legacy"])  # ❌ ELIMINADO - Frontend migrado a /auth-v2
 app.include_router(admin_panel.router, tags=["Panel de Administración"])
-app.include_router(users.router, prefix="/api", tags=["Gestión de Usuarios"])
+app.include_router(users.router, prefix="/api", tags=["Gestión de Usuarios Legacy"])
 app.include_router(upload_history.router, prefix="/api", tags=["Historial de Cargas"])
 app.include_router(db_admin.router, prefix="/api", tags=["Administración de Base de Datos"])
 app.include_router(dashboard_attendance.router, prefix="/dashboard_attendance")
@@ -75,9 +93,34 @@ app.add_middleware(
 async def root():
     """Ruta raíz con información sobre la API"""
     return {
-        "message": "API EduForge funcionando correctamente",
-        "version": "1.0.0",
-        "endpoints": ["/docs", "/dashboard_attendance", "/dashboard_risk", "/auth"]
+        "message": "EduForge API - Clean Architecture v2.0",
+        "version": "2.0.0",
+        "architecture": "Clean Architecture + DDD",
+        "status": "✅ Migración completa a Clean Architecture",
+        "endpoints": {
+            "docs": "/docs",
+            "clean_architecture": {
+                "predictions": "/predictions/*",
+                "auth": "/auth-v2/*",
+                "users": "/users-v2/*"
+            },
+            "functional": {
+                "upload": "/upload",
+                "predict": "/predict",
+                "dashboards": "/dashboard_*/*",
+                "admin": "/api/*"
+            }
+        }
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "version": "2.0.0",
+        "architecture": "Clean Architecture",
+        "auth": "auth-v2 only"
     }
 
 @app.post("/upload")

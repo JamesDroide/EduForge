@@ -1,0 +1,102 @@
+# src/main_v2.py
+"""
+Punto de entrada de la aplicación con Clean Architecture
+Versión mejorada con todas las rutas organizadas
+"""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+# Importar configuración
+from infrastructure.config.database import Base, engine
+
+# Importar modelos para crear tablas
+from infrastructure.persistence.sqlalchemy.models.prediction_model import PredictionModel
+from infrastructure.persistence.sqlalchemy.models.user_model import UserModel
+from models.upload_history import UploadHistory
+
+# Importar rutas nuevas (Clean Architecture)
+from presentation.api.routes.prediction_routes import router as prediction_router
+from presentation.api.routes.auth_routes import router as auth_v2_router
+from presentation.api.routes.user_routes import router as user_v2_router
+
+# Importar rutas existentes (legacy)
+from api.routes import dashboard_attendance, dashboard_risk, auth, users, admin_panel, upload_history, db_admin
+
+print("🔄 Creando tablas en la base de datos...")
+Base.metadata.create_all(engine)
+print("✅ Tablas creadas/verificadas correctamente")
+
+# Crear aplicación FastAPI
+app = FastAPI(
+    title="EduForge API - Clean Architecture",
+    version="2.0.0",
+    description="API para predicción de deserción estudiantil con arquitectura limpia"
+)
+
+# Configuración CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "https://eduforge-git-main-jamesdroides-projects.vercel.app",
+        "https://eduforge-wheat.vercel.app",
+        "https://eduforge-production.up.railway.app",
+        "https://*.vercel.app",
+        "https://eduforge.vercel.app"
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
+
+# ==========================================
+# RUTAS NUEVAS (CLEAN ARCHITECTURE)
+# ==========================================
+app.include_router(prediction_router)    # /predictions/*
+app.include_router(auth_v2_router)       # /auth-v2/*
+app.include_router(user_v2_router)       # /users-v2/*
+
+# ==========================================
+# RUTAS LEGACY (COMPATIBILIDAD)
+# ==========================================
+app.include_router(auth.router, prefix="/auth", tags=["Auth Legacy"])
+app.include_router(admin_panel.router, tags=["Admin Panel Legacy"])
+app.include_router(users.router, prefix="/api", tags=["Users Legacy"])
+app.include_router(upload_history.router, prefix="/api", tags=["Upload History"])
+app.include_router(db_admin.router, prefix="/api", tags=["DB Admin"])
+app.include_router(dashboard_attendance.router, prefix="/dashboard_attendance")
+app.include_router(dashboard_risk.router, prefix="/dashboard_risk")
+
+# Endpoint raíz
+@app.get("/")
+async def root():
+    """Información de la API"""
+    return {
+        "message": "EduForge API - Clean Architecture v2.0",
+        "version": "2.0.0",
+        "architecture": "Clean Architecture + DDD",
+        "endpoints": {
+            "docs": "/docs",
+            "clean_architecture": {
+                "predictions": "/predictions/*",
+                "auth": "/auth-v2/*",
+                "users": "/users-v2/*"
+            },
+            "legacy": {
+                "auth": "/auth/*",
+                "dashboard_attendance": "/dashboard_attendance/*",
+                "dashboard_risk": "/dashboard_risk/*",
+                "api": "/api/*"
+            }
+        }
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "version": "2.0.0",
+        "architecture": "Clean Architecture"
+    }
+

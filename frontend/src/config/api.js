@@ -75,13 +75,13 @@ api.interceptors.response.use(
 
 // Endpoints específicos
 export const API_ENDPOINTS = {
-  // Auth endpoints
-  LOGIN: `${API_BASE_URL}/auth/login`,
-  REGISTER: `${API_BASE_URL}/auth/register`,
-  ME: `${API_BASE_URL}/auth/me`,
-  CHANGE_PASSWORD: `${API_BASE_URL}/auth/change-password`,
-  LOGOUT: `${API_BASE_URL}/auth/logout`,
-  USERS: `${API_BASE_URL}/auth/users`,
+  // Auth endpoints (Clean Architecture v2)
+  LOGIN: `${API_BASE_URL}/auth-v2/login`,
+  REGISTER: `${API_BASE_URL}/auth-v2/register`,
+  ME: `${API_BASE_URL}/auth-v2/me`,
+  CHANGE_PASSWORD: `${API_BASE_URL}/auth-v2/change-password`,
+  LOGOUT: `${API_BASE_URL}/auth-v2/logout`,
+  USERS: `${API_BASE_URL}/users-v2`,
 
   // Dashboard endpoints
   STUDENTS_AT_RISK: `${API_BASE_URL}/dashboard_risk/students_at_risk`,
