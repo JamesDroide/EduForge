@@ -15,9 +15,9 @@ import Icon from "@mui/material/Icon";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
+import MDTypography from "components/MDTypography";
 
 // Material Dashboard 2 React example components
-import Breadcrumbs from "examples/Breadcrumbs";
 import NotificationItem from "examples/Items/NotificationItem";
 
 // Custom styles for DashboardNavbar
@@ -107,7 +107,14 @@ function DashboardNavbar({ absolute, light, isMini }) {
     >
       <Toolbar sx={(theme) => navbarContainer(theme)}>
         <MDBox color="inherit" mb={{ xs: 1, md: 0 }} sx={(theme) => navbarRow(theme, { isMini })}>
-          <Breadcrumbs icon="home" title={route[route.length - 1]} route={route} light={light} />
+          <MDBox display="flex" alignItems="center">
+            <Icon sx={{ mr: 1 }}>home</Icon>
+            <MDTypography variant="h6" fontWeight="medium" color={light ? "white" : "dark"}>
+              {route[route.length - 1]
+                ? route[route.length - 1].replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase())
+                : "Dashboard"}
+            </MDTypography>
+          </MDBox>
         </MDBox>
         {isMini ? null : (
           <MDBox sx={(theme) => navbarRow(theme, { isMini })}>
