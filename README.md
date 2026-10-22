@@ -50,7 +50,7 @@
 ```bash
 # Clonar repositorio
 git clone https://github.com/JamesDroide/EduForge.git
-cd EduForge
+cd EduForge/backend
 
 # Instalar dependencias Python
 pip install -r requirements.txt
@@ -63,7 +63,7 @@ uvicorn main:app --reload --port 8000
 ### Frontend Setup
 ```bash
 # Instalar dependencias Node.js
-cd frontend
+cd EduForge/frontend
 npm install
 
 # Ejecutar aplicación
@@ -110,23 +110,38 @@ npm start
 
 ```
 EduForge/
-├── src/                    # Backend (FastAPI)
-│   ├── main.py            # Punto de entrada de la API
-│   ├── models/            # Modelos de ML y predicción
-│   ├── services/          # Lógica de negocio
-│   └── api/               # Endpoints de la API
-├── frontend/              # Frontend (React)
+├── backend/                     # Backend (FastAPI + Machine Learning)
+│   ├── src/                     # Código fuente de la API
+│   │   ├── main.py              # Punto de entrada de la API
+│   │   ├── config.py            # Configuración de base de datos
+│   │   ├── models/              # Modelos ORM y predictor ML
+│   │   ├── services/            # Lógica de negocio
+│   │   ├── schemas/             # Esquemas Pydantic
+│   │   ├── migrations/          # Migraciones y seeds de BD
+│   │   ├── utils/               # Seguridad (JWT/bcrypt) y dependencias
+│   │   └── api/routes/          # Endpoints de la API
+│   ├── scripts/                 # Scripts de entrenamiento y mantenimiento
+│   │   ├── check_db.py          # Diagnóstico de base de datos
+│   │   └── models/              # Entrenamiento y artefactos (.pkl)
+│   ├── data/                    # Datasets CSV de entrenamiento y validación
+│   ├── notebooks/               # Jupyter notebooks de exploración y evaluación
+│   ├── tests/                   # Pruebas automatizadas del backend
+│   ├── .env.example             # Plantilla de variables de entorno (Backend)
+│   ├── .gitignore               # Reglas Git para Python/FastAPI
+│   ├── requirements.txt         # Dependencias de Python
+│   └── railway.toml             # Configuración de despliegue en Railway
+├── frontend/                    # Frontend (React + Material-UI)
+│   ├── public/                  # Recursos estáticos
 │   ├── src/
-│   │   ├── layouts/       # Páginas principales
-│   │   ├── components/    # Componentes reutilizables
-│   │   └── utils/         # Utilidades y cache
-├── scripts/               # Scripts de entrenamiento
-│   └── models/           
-│       ├── model_trainer.py    # Entrenamiento del modelo
-│       └── trained/           # Modelos entrenados (.pkl)
-├── data/                 # Datasets de entrenamiento
-├── notebooks/            # Jupyter notebooks para análisis
-└── tests/               # Tests automatizados
+│   │   ├── layouts/             # Módulos y vistas principales
+│   │   ├── components/          # Componentes reutilizables
+│   │   ├── config/              # Configuración de cliente Axios (api.js)
+│   │   └── utils/               # Utilidades y sistema de caché
+│   ├── .env.example             # Plantilla de variables de entorno (Frontend)
+│   ├── .gitignore               # Reglas Git para Node/React
+│   ├── package.json             # Dependencias de Node.js
+│   └── vercel.json              # Configuración de despliegue en Vercel
+└── README.md                    # Documentación general
 ```
 
 ## 🎯 Funcionalidades Clave

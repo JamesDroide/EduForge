@@ -1,9 +1,13 @@
 # src/config.py
 import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, text, event
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import OperationalError
 import logging
+
+# Cargar variables de entorno desde backend/.env
+load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env")))
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)

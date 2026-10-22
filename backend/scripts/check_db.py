@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
 Script de diagnóstico para verificar la base de datos en Railway
-Ejecutar: python check_db.py
+Ejecutar: python scripts/check_db.py
 """
 import os
 import sys
 
 # Agregar src al path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 
 from sqlalchemy import create_engine, text, inspect
 from config import DATABASE_URL, engine

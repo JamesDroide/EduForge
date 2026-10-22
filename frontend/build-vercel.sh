@@ -1,9 +1,6 @@
 #!/bin/bash
-# Build script para Vercel
+# Build script para Vercel (desde frontend/)
 echo "🚀 Building EduForge frontend for Vercel..."
-
-# Navegar al directorio del frontend
-cd frontend
 
 # Instalar dependencias
 echo "📦 Installing dependencies..."

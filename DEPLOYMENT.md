@@ -11,14 +11,14 @@
 
 1. Ve a [railway.app](https://railway.app)
 2. Conecta tu repositorio GitHub
-3. Selecciona "Deploy from GitHub repo"
-4. Railway detectará automáticamente el `railway.toml`
+3. Selecciona "Deploy from GitHub repo" y define **`backend`** como **Root Directory**
+4. Railway detectará automáticamente `backend/railway.toml`
 5. Copia la URL generada (ej: `https://eduforge-backend.up.railway.app`)
 
 ### 2. Frontend en Vercel 
 
 1. Ve a [vercel.com](https://vercel.com)
-2. Conecta tu repositorio GitHub
+2. Conecta tu repositorio GitHub y define **`frontend`** como **Root Directory**
 3. **IMPORTANTE:** Configura estas variables de entorno:
    ```
    REACT_APP_API_URL = https://tu-app-railway.up.railway.app
@@ -38,10 +38,10 @@
 
 ## 🔧 Configuraciones Técnicas
 
-- `vercel.json` - Configuración de Vercel
-- `railway.toml` - Configuración de Railway  
-- `netlify.toml` - Alternativa con Netlify
-- Variables de entorno configuradas automáticamente
+- `frontend/vercel.json` - Configuración de Vercel
+- `backend/railway.toml` - Configuración de Railway  
+- `frontend/netlify.toml` - Alternativa con Netlify
+- Variables de entorno separadas en `backend/.env` y `frontend/.env.*`
 
 ## 🎯 Resultado Final
 
