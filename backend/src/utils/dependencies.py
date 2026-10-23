@@ -8,10 +8,8 @@ from schemas.auth_schemas import TokenData
 from typing import Optional
 import logging
 
-# Configurar logging
 logger = logging.getLogger(__name__)
 
-# Define el esquema OAuth2
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login", auto_error=False)
 
 def get_db():
@@ -26,7 +24,7 @@ def get_db():
     try:
         yield db
     except Exception as e:
-        logger.error(f"Error en la sesión de BD: {str(e)}")
+        logger.error(f"Error en la sesion de BD: {str(e)}")
         db.rollback()
         raise
     finally:
@@ -56,7 +54,6 @@ async def get_current_user(
     )
 
     try:
-        # Decodificar el token
         payload = decode_access_token(token)
         username: str = payload.get("sub")
 
@@ -67,7 +64,6 @@ async def get_current_user(
     except Exception:
         raise credentials_exception
 
-    # Buscar el usuario en la base de datos
     user = db.query(Usuario).filter(Usuario.username == token_data.username).first()
 
     if user is None:

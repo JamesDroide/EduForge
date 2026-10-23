@@ -1,13 +1,5 @@
-/**
-=========================================================
-* EduForge - User Management Page
-=========================================================
-*/
-
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-
-// @mui material components
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import Icon from "@mui/material/Icon";
@@ -24,18 +16,12 @@ import TableRow from "@mui/material/TableRow";
 import IconButton from "@mui/material/IconButton";
 import Switch from "@mui/material/Switch";
 import MenuItem from "@mui/material/MenuItem";
-
-// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import MDAlert from "components/MDAlert";
-
-// API configuration
 import { API_BASE_URL } from "config/api";
-
-// Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
 function UserManagement() {
@@ -43,7 +29,6 @@ function UserManagement() {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
 
-  // Verificar si el usuario tiene acceso al panel de administración
   useEffect(() => {
     const adminToken = localStorage.getItem("admin_token");
     if (!adminToken) {
@@ -51,27 +36,23 @@ function UserManagement() {
     }
   }, [navigate]);
 
-  // Función para obtener el token de administrador
   const getAdminToken = () => {
     return localStorage.getItem("admin_token");
   };
 
-  // Función para cerrar sesión del panel de administración
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
     navigate("/admin-panel/login");
   };
 
-  // Estados para la lista de usuarios
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Estados para el diálogo de crear/editar usuario
   const [openDialog, setOpenDialog] = useState(false);
-  const [dialogMode, setDialogMode] = useState("create"); // "create" o "edit"
+  const [dialogMode, setDialogMode] = useState("create");
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
     username: "",
@@ -81,12 +62,10 @@ function UserManagement() {
     is_active: true,
   });
 
-  // Estados para el diálogo de cambiar contraseña
   const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Función para obtener la lista de usuarios
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -115,12 +94,10 @@ function UserManagement() {
     }
   }, [navigate]);
 
-  // Cargar usuarios al montar el componente
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Función para abrir el diálogo de crear usuario
   const handleCreateUser = () => {
     setDialogMode("create");
     setFormData({
@@ -133,7 +110,6 @@ function UserManagement() {
     setOpenDialog(true);
   };
 
-  // Función para abrir el diálogo de editar usuario
   const handleEditUser = (user) => {
     setDialogMode("edit");
     setSelectedUser(user);
@@ -147,12 +123,10 @@ function UserManagement() {
     setOpenDialog(true);
   };
 
-  // Función para guardar usuario (crear o editar)
   const handleSaveUser = async () => {
     setError("");
     setSuccess("");
 
-    // Validaciones
     if (!formData.username || !formData.email) {
       setError("Por favor, completa todos los campos requeridos");
       return;
@@ -220,7 +194,6 @@ function UserManagement() {
     }
   };
 
-  // Función para abrir el diálogo de cambiar contraseña
   const handleOpenPasswordDialog = (user) => {
     setSelectedUser(user);
     setNewPassword("");
@@ -228,7 +201,6 @@ function UserManagement() {
     setOpenPasswordDialog(true);
   };
 
-  // Función para cambiar la contraseña de un usuario
   const handleChangePassword = async () => {
     setError("");
     setSuccess("");
@@ -285,7 +257,6 @@ function UserManagement() {
     }
   };
 
-  // Función para activar/desactivar usuario
   const handleToggleActive = async (user) => {
     setError("");
     setSuccess("");
@@ -325,7 +296,6 @@ function UserManagement() {
     }
   };
 
-  // Función para eliminar usuario
   const handleDeleteUser = async (user) => {
     if (!window.confirm(`¿Estás seguro de eliminar al usuario ${user.username}?`)) {
       return;
@@ -378,7 +348,6 @@ function UserManagement() {
         overflowY: "auto",
       }}
     >
-      {/* Header del Panel de Administración */}
       <MDBox display="flex" justifyContent="space-between" alignItems="center" px={3} mb={3}>
         <MDBox>
           <MDTypography variant="h3" color={darkMode ? "white" : "dark"} mb={1}>
@@ -584,7 +553,6 @@ function UserManagement() {
         </Grid>
       </MDBox>
 
-      {/* Diálogo para crear/editar usuario */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
           <MDTypography variant="h5">
@@ -660,7 +628,6 @@ function UserManagement() {
         </DialogActions>
       </Dialog>
 
-      {/* Diálogo para cambiar contraseña */}
       <Dialog
         open={openPasswordDialog}
         onClose={() => setOpenPasswordDialog(false)}

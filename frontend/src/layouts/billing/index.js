@@ -1,33 +1,14 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-// @mui material components
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-
-// @mui/material imports
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
+import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-
-// Cache optimizado para estudiantes
 import { useStudentsCache } from "utils/studentsCache";
 
 function Billing() {
@@ -36,7 +17,6 @@ function Billing() {
   const [searchParams] = useSearchParams();
   const [hoveredCell, setHoveredCell] = useState(null);
 
-  // Obtener datos desde multiple fuentes
   const stateData = location.state?.predictions || [];
   const urlPredictions = searchParams.get("predictions");
   const fromUpload = searchParams.get("fromUpload") === "true";
@@ -52,24 +32,20 @@ function Billing() {
 
   const { processingMessage } = location.state || {};
 
-  // Usar cache optimizado en lugar de fetch individual
   const { students: allPredictions, loading, hasValidData, refresh } = useStudentsCache();
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [lastCsvTimestamp, setLastCsvTimestamp] = useState(() =>
     localStorage.getItem("csv_upload_timestamp")
   );
 
-  // Determinar datos desde multiples fuentes, pero priorizar el estado interno
+  // Priorizar predicciones pasadas por URL o router state sobre el cache local
   let finalPredictions = allPredictions;
-
-  // Si hay datos desde URL o state, usar esos primero
   if (urlData.length > 0) {
     finalPredictions = urlData;
   } else if (stateData.length > 0) {
     finalPredictions = stateData;
   }
 
-  // Detectar cambios en el CSV y forzar actualizacion
   useEffect(() => {
     const checkForNewCsv = () => {
       const currentTimestamp = localStorage.getItem("csv_upload_timestamp");
@@ -106,21 +82,18 @@ function Billing() {
     };
   }, [lastCsvTimestamp, refresh]);
 
-  // Aplicar filtro a los datos
   const currentPredictions = finalPredictions.filter((prediction) => {
     if (activeFilter === "Todos") return true;
     return prediction.riesgo_desercion === activeFilter;
   });
 
-  console.log("📊 hasValidData:", hasValidData);
-  console.log("📊 Datos filtrados a mostrar:", currentPredictions.length);
+  console.log("hasValidData:", hasValidData);
+  console.log("Datos filtrados a mostrar:", currentPredictions.length);
 
-  // Función para manejar el filtrado
   const handleFilterChange = (filterType) => {
     setActiveFilter(filterType);
   };
 
-  // Estilos para las celdas de encabezado
   const headerCellBaseStyle = {
     border: "1px solid #ddd",
     padding: "12px 8px",
@@ -129,7 +102,6 @@ function Billing() {
     fontSize: "14px",
   };
 
-  // Estilos para las celdas de datos
   const dataCellStyle = {
     border: "1px solid #ddd",
     padding: "8px",
@@ -148,16 +120,15 @@ function Billing() {
     padding: "8px",
     fontSize: "13px",
     cursor: "pointer",
-    fontWeight: "500", // Un poco más destacado que el texto normal
-    color: "#2c3e50", // Color más oscuro y profesional
-    transition: "all 0.2s ease", // Transición suave
+    fontWeight: "500",
+    color: "#2c3e50",
+    transition: "all 0.2s ease",
   };
 
-  // Estilo para el hover de las celdas clickeables
   const clickableCellHoverStyle = {
-    color: "#1a202c", // Color más oscuro en hover
-    fontWeight: "600", // Más bold en hover
-    textShadow: "0 0 1px rgba(26, 32, 44, 0.3)", // Sutil sombra para mayor contraste
+    color: "#1a202c",
+    fontWeight: "600",
+    textShadow: "0 0 1px rgba(26, 32, 44, 0.3)",
   };
 
   return (
@@ -168,7 +139,6 @@ function Billing() {
           <Grid item xs={12}>
             <Card>
               <MDBox p={4}>
-                {/* Mensaje de procesamiento exitoso */}
                 {(processingMessage || fromUpload) && (
                   <MDBox
                     mb={3}
@@ -180,7 +150,7 @@ function Billing() {
                     }}
                   >
                     <MDTypography variant="h6" color="success" fontWeight="bold">
-                      ✅{" "}
+                      <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>check_circle</Icon>
                       {processingMessage ||
                         "CSV procesado exitosamente - Datos completos disponibles"}
                     </MDTypography>
@@ -191,7 +161,6 @@ function Billing() {
                   </MDBox>
                 )}
 
-                {/* Botón para ir al Dashboard - Solo visible si hay datos */}
                 {hasValidData && currentPredictions.length > 0 && (
                   <MDBox mb={3} textAlign="center">
                     <MDButton
@@ -206,7 +175,8 @@ function Billing() {
                         })
                       }
                     >
-                      📊 IR AL REPORTE GENERAL (DASHBOARD)
+                      <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>assessment</Icon>
+                      IR AL REPORTE GENERAL (DASHBOARD)
                     </MDButton>
                   </MDBox>
                 )}
@@ -215,7 +185,6 @@ function Billing() {
                   Resultados de Predicción de Deserción
                 </MDTypography>
 
-                {/* Solo mostrar filtros si hay datos del CSV */}
                 {hasValidData && (
                   <MDBox mb={3}>
                     <Grid container spacing={2} justifyContent="center">
@@ -259,7 +228,6 @@ function Billing() {
                   </MDBox>
                 )}
 
-                {/* Solo mostrar estadísticas si hay datos del CSV */}
                 {hasValidData && currentPredictions.length > 0 && (
                   <MDBox mb={3} p={2} sx={{ backgroundColor: "#f8f9fa", borderRadius: "8px" }}>
                     <Grid container spacing={2}>
@@ -298,18 +266,17 @@ function Billing() {
                   </MDBox>
                 )}
 
-                {/* Mostrar contenido según el estado */}
                 {!hasValidData ? (
-                  // Vista vacía cuando no hay CSV cargado
                   <MDBox textAlign="center" py={5}>
                     <MDTypography variant="h3" color="text" mb={3}>
-                      📋 No hay datos disponibles
+                      <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>assignment</Icon>
+                      No hay datos disponibles
                     </MDTypography>
                     <MDTypography variant="h6" color="text" mb={2}>
                       Para ver los resultados completos, necesitas cargar un archivo CSV primero
                     </MDTypography>
                     <MDTypography variant="body1" color="text" mb={4}>
-                      Ve a la sección "Cargar Datos" para subir un archivo CSV con
+                      Ve a la sección &quot;Cargar Datos&quot; para subir un archivo CSV con
                       <br />
                       información de estudiantes
                     </MDTypography>
@@ -328,7 +295,6 @@ function Billing() {
                     </MDTypography>
                   </MDBox>
                 ) : currentPredictions.length > 0 ? (
-                  // TABLA CON DATOS - Una sola tabla limpia y bien formateada
                   <MDBox
                     mt={4}
                     sx={{
@@ -424,33 +390,31 @@ function Billing() {
                       </thead>
                       <tbody>
                         {currentPredictions.map((row, index) => {
-                          // Detectar el nivel de riesgo para aplicar colores correctos
                           const riesgoDesercion = row.riesgo_desercion || "Bajo";
 
-                          // Función para obtener colores según el nivel de riesgo
                           const getColorStyles = (riesgo) => {
                             switch (riesgo?.toLowerCase()) {
                               case "alto":
                                 return {
-                                  backgroundColor: "#ffcdd2", // Rojo claro
-                                  color: "#c62828", // Rojo oscuro
+                                  backgroundColor: "#ffcdd2",
+                                  color: "#c62828",
                                   fontWeight: "bold",
                                 };
                               case "medio":
                                 return {
-                                  backgroundColor: "#fff3cd", // Amarillo claro
-                                  color: "#856404", // Amarillo oscuro/marrón
+                                  backgroundColor: "#fff3cd",
+                                  color: "#856404",
                                   fontWeight: "bold",
                                 };
                               case "bajo":
                                 return {
-                                  backgroundColor: "#d4edda", // Verde claro
-                                  color: "#155724", // Verde oscuro
+                                  backgroundColor: "#d4edda",
+                                  color: "#155724",
                                   fontWeight: "normal",
                                 };
                               default:
                                 return {
-                                  backgroundColor: "#f8f9fa", // Gris claro por defecto
+                                  backgroundColor: "#f8f9fa",
                                   color: "inherit",
                                   fontWeight: "normal",
                                 };
@@ -459,15 +423,13 @@ function Billing() {
 
                           const colorStyles = getColorStyles(riesgoDesercion);
 
-                          // Función para manejar el clic en el nombre del estudiante
                           const handleStudentClick = (studentData) => {
                             console.log(
-                              "🔍 Clic en estudiante desde Resultados completos:",
+                              "Clic en estudiante desde Resultados completos:",
                               studentData
                             );
 
-                            // Crear objeto base con los datos disponibles del row
-                            let completeStudentData = {
+                            const completeStudentData = {
                               student_id:
                                 studentData.id_estudiante || studentData.student_id || null,
                               name: studentData.nombre || studentData.name || "Estudiante",
@@ -478,9 +440,8 @@ function Billing() {
                               ...studentData,
                             };
 
-                            console.log("📤 Navegando con datos:", completeStudentData);
+                            console.log("Navegando con datos:", completeStudentData);
 
-                            // Navegar al análisis individual con el ID del estudiante en la URL
                             navigate(`/individual?studentId=${completeStudentData.student_id}`, {
                               state: {
                                 preselectedStudent: completeStudentData,
@@ -489,7 +450,6 @@ function Billing() {
                             });
                           };
 
-                          // Crear estilo dinámico para la celda del nombre
                           const nameRowKey = `name-${index}`;
                           const isHovered = hoveredCell === nameRowKey;
                           const dynamicNameCellStyle = {

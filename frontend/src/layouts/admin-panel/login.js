@@ -1,26 +1,12 @@
-/**
-=========================================================
-* EduForge - Admin Panel Login
-=========================================================
-*/
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-// @mui material components
 import Card from "@mui/material/Card";
-
-// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import MDAlert from "components/MDAlert";
-
-// API configuration
 import { API_BASE_URL } from "config/api";
-
-// Images
 import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 
 function AdminLogin() {
@@ -36,7 +22,6 @@ function AdminLogin() {
     setError("");
     setLoading(true);
 
-    // Validaciones
     if (!username || !password || !accessCode) {
       setError("Por favor, completa todos los campos");
       setLoading(false);
@@ -62,11 +47,9 @@ function AdminLogin() {
       }
 
       const data = await response.json();
-      // Guardar token de administrador
       localStorage.setItem("admin_token", data.access_token);
       localStorage.setItem("admin_user", JSON.stringify(data.user));
 
-      // Redirigir al panel de administración
       navigate("/admin-panel/usuarios");
     } catch (err) {
       setError(err.message);

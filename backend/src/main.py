@@ -12,41 +12,35 @@ import time
 from api.routes import dashboard_attendance, dashboard_risk, auth, users, admin_panel, upload_history, db_admin
 from config import Base, engine, SessionLocal
 
-# IMPORTANTE: Importar TODOS los modelos ANTES de crear las tablas
+# Importar todos los modelos antes de Base.metadata.create_all para registrarlos en el metadata de SQLAlchemy
 from models.user import Usuario
 from models.upload_history import UploadHistory, UploadPrediction
 from models import ResultadoPrediccion, StudentData
 
 from utils.dependencies import get_current_user_optional
-
-# Ejecutar migraciones automáticas al iniciar
 from migrations.auto_migrate import run_migrations
+
 run_migrations()
 
-# Crear todas las tablas en la base de datos
-# Esto asegura que Usuario, UploadHistory, etc. existan
-print(" Creando tablas en la base de datos...")
+print("Creando tablas en la base de datos...")
 Base.metadata.create_all(engine)
-print(" Tablas creadas/verificadas correctamente")
+print("Tablas creadas/verificadas correctamente")
 
-# Verificar que la tabla usuarios existe
 from sqlalchemy import inspect
 inspector = inspect(engine)
 tables = inspector.get_table_names()
 if 'usuarios' in tables:
-    print(" Tabla 'usuarios' confirmada en la base de datos")
+    print("Tabla 'usuarios' confirmada en la base de datos")
 else:
-    print(" ERROR: Tabla 'usuarios' NO existe en la base de datos")
+    print("ERROR: Tabla 'usuarios' NO existe en la base de datos")
 
-#  CORRECCIÓN: Limpiar variables globales al iniciar el servidor
-# Esto asegura que no se muestren datos viejos de la BD hasta que se cargue un CSV
+# Evitar que se muestren datos persistidos de sesiones previas hasta que se cargue un nuevo archivo
 clear_latest_predictions()
-clear_latest_csv_data()  # También limpiar datos de asistencia
-print(" Servidor iniciado - Variables globales limpiadas")
+clear_latest_csv_data()
+print("Servidor iniciado - Variables globales limpiadas")
 
 app = FastAPI(title="Eduforge API", version="1.0.0")
 
-# Incluir routers para los dashboards
 app.include_router(auth.router, prefix="/auth", tags=["Autenticación"])
 app.include_router(admin_panel.router, tags=["Panel de Administración"])
 app.include_router(users.router, prefix="/api", tags=["Gestión de Usuarios"])
@@ -55,23 +49,23 @@ app.include_router(db_admin.router, prefix="/api", tags=["Administración de Bas
 app.include_router(dashboard_attendance.router, prefix="/dashboard_attendance")
 app.include_router(dashboard_risk.router, prefix="/dashboard_risk")
 
-# Configuración CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",  # Desarrollo local
-        "http://127.0.0.1:3000",  # Desarrollo local IP
-        "https://eduforge-git-main-jamesdroides-projects.vercel.app",  # Dominio exacto de Vercel
-        "https://eduforge-wheat.vercel.app",  # Nuevo dominio de Vercel
-        "https://eduforge-production.up.railway.app",  # Railway backend
-        "https://*.vercel.app",  # Cualquier subdominio de Vercel
-        "https://eduforge.vercel.app"  # Dominio principal si lo tienes
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://eduforge-git-main-jamesdroides-projects.vercel.app",
+        "https://eduforge-wheat.vercel.app",
+        "https://eduforge-production.up.railway.app",
+        "https://*.vercel.app",
+        "https://eduforge.vercel.app"
     ],
     allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
 @app.get("/")
 async def root():
     """Ruta raíz con información sobre la API"""
@@ -85,7 +79,6 @@ async def root():
 async def diagnostico_bd():
     """
     Endpoint de diagnóstico para verificar el estado de la base de datos
-    SOLO para debugging - ELIMINAR en producción final
     """
     from sqlalchemy import inspect, text
     import os
@@ -93,24 +86,19 @@ async def diagnostico_bd():
     try:
         db = SessionLocal()
 
-        # Información de conexión
         db_name = db.execute(text("SELECT current_database()")).scalar()
         user_name = db.execute(text("SELECT current_user")).scalar()
 
-        # Tablas
         inspector = inspect(engine)
         tables = inspector.get_table_names()
 
-        # Contar usuarios
         usuarios_count = db.execute(text("SELECT COUNT(*) FROM usuarios")).scalar() if 'usuarios' in tables else 0
 
-        # Listar usuarios si existen
         usuarios_list = []
         if usuarios_count > 0:
             result = db.execute(text("SELECT id, username, email, rol FROM usuarios ORDER BY id DESC LIMIT 10"))
             usuarios_list = [{"id": r[0], "username": r[1], "email": r[2], "rol": r[3]} for r in result]
 
-        # Variables de entorno (sin valores sensibles)
         database_url_configured = bool(os.getenv("DATABASE_URL"))
 
         db.close()
@@ -135,12 +123,10 @@ async def diagnostico_bd():
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...), current_user: Usuario = Depends(get_current_user_optional)):
     try:
-        # Limpiar datos anteriores antes de cargar el nuevo archivo
         clear_previous_data()
 
         file_path = await save_uploaded_file(file)
 
-        # Guardar en historial si hay usuario autenticado
         upload_id = None
         if current_user:
             db = SessionLocal()
@@ -154,7 +140,7 @@ async def upload_file(file: UploadFile = File(...), current_user: Usuario = Depe
             upload_id = upload_record.id
             db.close()
 
-        print(f" Archivo guardado en: {file_path}")
+        print(f"Archivo guardado en: {file_path}")
         return {
             "success": True,
             "message": f"Archivo '{file.filename}' guardado correctamente",
@@ -164,7 +150,7 @@ async def upload_file(file: UploadFile = File(...), current_user: Usuario = Depe
             "dashboard_reset": True
         }
     except Exception as e:
-        print(f" Error en upload: {str(e)}")
+        print(f"Error en upload: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error al subir archivo: {str(e)}")
 
 @app.post("/predict")
@@ -172,7 +158,6 @@ async def predict(filename: str, upload_id: int = None):
     start_time = time.time()
 
     try:
-        # Usar la ruta absoluta consistentemente
         filename = os.path.basename(filename)
         upload_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
         file_path = os.path.join(upload_dir, filename)
@@ -182,7 +167,7 @@ async def predict(filename: str, upload_id: int = None):
         if not os.path.exists(file_path):
             try:
                 available_files = os.listdir(upload_dir) if os.path.exists(upload_dir) else []
-            except:
+            except Exception:
                 available_files = ["No se pudo listar el directorio"]
 
             raise HTTPException(
@@ -190,19 +175,17 @@ async def predict(filename: str, upload_id: int = None):
                 detail=f"Archivo no encontrado en: {file_path}. Archivos disponibles: {available_files}"
             )
 
-        # Verificar que el archivo sea legible
         try:
             if filename.lower().endswith(('.xlsx', '.xls')):
                 df_test = pd.read_excel(file_path)
             else:
                 df_test = pd.read_csv(file_path)
-            print(f" Archivo leído correctamente. Columnas: {df_test.columns.tolist()}")
-            print(f" Número de filas: {len(df_test)}")
+            print(f"Archivo leido correctamente. Columnas: {df_test.columns.tolist()}")
+            print(f"Numero de filas: {len(df_test)}")
             total_students = len(df_test)
         except Exception as e:
-            print(f" Error leyendo el archivo: {e}")
+            print(f"Error leyendo el archivo: {e}")
 
-            # Actualizar historial con error si existe upload_id
             if upload_id:
                 db = SessionLocal()
                 UploadHistoryService.update_upload_stats(
@@ -222,27 +205,21 @@ async def predict(filename: str, upload_id: int = None):
 
             raise HTTPException(status_code=400, detail=f"Error leyendo el archivo CSV: {str(e)}")
 
-        # Llamar a la función de predicción
         predictions = predict_desertion(file_path)
 
-        # Actualizar los datos para el frontend
         update_latest_predictions(predictions)
         update_attendance_data(predictions)
 
-        # Guardar predicciones en el historial si existe upload_id
         if upload_id:
             db = SessionLocal()
 
-            # Contar estadísticas
             high_risk_count = sum(1 for p in predictions if p.get('riesgo_desercion') == 'Alto')
             medium_risk_count = sum(1 for p in predictions if p.get('riesgo_desercion') == 'Medio')
             low_risk_count = sum(1 for p in predictions if p.get('riesgo_desercion') == 'Bajo')
             processed_count = len(predictions)
             failed_count = total_students - processed_count
 
-            # Guardar cada predicción
             for pred in predictions:
-                # Identificar factores de riesgo
                 risk_factors = []
                 if pred.get('nota_final', 0) < 11:
                     risk_factors.append('Nota baja')
@@ -267,7 +244,6 @@ async def predict(filename: str, upload_id: int = None):
                     risk_factors={'factors': risk_factors} if risk_factors else None
                 )
 
-            # Actualizar estadísticas del upload
             processing_time = time.time() - start_time
             UploadHistoryService.update_upload_stats(
                 db=db,
@@ -283,16 +259,15 @@ async def predict(filename: str, upload_id: int = None):
             )
 
             db.close()
-            print(f" Historial actualizado: {processed_count} predicciones guardadas")
+            print(f"Historial actualizado: {processed_count} predicciones guardadas")
 
         return {"predictions": predictions}
 
     except HTTPException:
         raise
     except Exception as e:
-        print(f" Error general en /predict: {e}")
+        print(f"Error general en /predict: {e}")
 
-        # Actualizar historial con error si existe upload_id
         if upload_id:
             db = SessionLocal()
             UploadHistoryService.update_upload_stats(
@@ -335,7 +310,7 @@ async def get_resultados_prediccion():
                 "id": r.id,
                 "id_estudiante": r.id_estudiante,
                 "nombre": r.nombre,
-                "nota": r.nota_final,  # Mantener 'nota' por compatibilidad con frontend
+                "nota": r.nota_final,  # Se mantiene 'nota' por compatibilidad con el contrato del frontend
                 "nota_final": r.nota_final,
                 "conducta": r.conducta,
                 "asistencia": r.asistencia,
@@ -425,7 +400,6 @@ async def limpiar_datos():
     """
     try:
         session = SessionLocal()
-        # Eliminar todos los registros de predicciones
         deleted_count = session.query(ResultadoPrediccion).delete()
         session.commit()
         session.close()
@@ -433,7 +407,7 @@ async def limpiar_datos():
         clear_latest_predictions()
         clear_latest_csv_data()
 
-        print(f" Se eliminaron {deleted_count} registros de predicciones")
+        print(f"Se eliminaron {deleted_count} registros de predicciones")
 
         return JSONResponse(content={
             "success": True,
@@ -441,7 +415,7 @@ async def limpiar_datos():
             "registros_eliminados": deleted_count
         })
     except Exception as e:
-        print(f" Error al limpiar datos: {str(e)}")
+        print(f"Error al limpiar datos: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error al limpiar datos: {str(e)}")
 
 @app.delete("/clear-dashboard")
@@ -456,7 +430,7 @@ async def clear_dashboard():
             "message": "Dashboard limpiado correctamente"
         }
     except Exception as e:
-        print(f" Error limpiando dashboard: {str(e)}")
+        print(f"Error limpiando dashboard: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error al limpiar dashboard: {str(e)}")
 
 @app.get("/dashboard-status")
@@ -474,10 +448,5 @@ async def get_dashboard_status():
             "total_records": count
         }
     except Exception as e:
-        print(f" Error obteniendo estado del dashboard: {str(e)}")
+        print(f"Error obteniendo estado del dashboard: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error al obtener estado del dashboard: {str(e)}")
-
-# Endpoint de diagnóstico eliminado por seguridad
-# Las credenciales del superadmin se gestionan mediante variables de entorno
-# Para crear/actualizar el usuario superadmin, ejecuta:
-# python src/migrations/create_admin_panel_user.py

@@ -10,7 +10,6 @@ import sys
 import os
 import re
 
-# Agregar el directorio src al path para las importaciones
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from config import engine, SessionLocal
@@ -53,7 +52,6 @@ async def get_table_schema(table_name: str, current_user: Usuario = Depends(requ
     try:
         inspector = inspect(engine)
 
-        # Verificar que la tabla existe
         tables = inspector.get_table_names()
         if table_name not in tables:
             raise HTTPException(status_code=404, detail=f"Tabla '{table_name}' no encontrada")
@@ -95,11 +93,9 @@ async def get_table_data(
             raise HTTPException(status_code=404, detail=f"Tabla '{table_name}' no encontrada")
 
         with engine.connect() as connection:
-            # Contar total de registros
             count_query = text(f"SELECT COUNT(*) FROM {table_name}")
             total_count = connection.execute(count_query).scalar()
 
-            # Obtener datos con paginación
             query = text(f"SELECT * FROM {table_name} LIMIT :limit OFFSET :offset")
             result = connection.execute(query, {"limit": limit, "offset": offset})
 
@@ -132,14 +128,12 @@ async def execute_query(
     """
     query = query_request.query.strip().upper()
 
-    # Validar que solo sea una consulta SELECT
     if not query.startswith("SELECT"):
         raise HTTPException(
             status_code=400,
             detail="Solo se permiten consultas SELECT por seguridad"
         )
 
-    # Validar que no contenga comandos peligrosos
     dangerous_keywords = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "CREATE", "TRUNCATE", "GRANT", "REVOKE"]
     if any(re.search(rf'\b{keyword}\b', query) for keyword in dangerous_keywords):
         raise HTTPException(
@@ -149,7 +143,6 @@ async def execute_query(
 
     try:
         with engine.connect() as connection:
-            # Agregar LIMIT si no existe
             original_query = query_request.query.strip()
             if "LIMIT" not in query:
                 original_query = f"{original_query} LIMIT {query_request.limit}"
@@ -184,7 +177,7 @@ async def get_database_stats(current_user: Usuario = Depends(require_admin)):
                     count_query = text(f"SELECT COUNT(*) FROM {table}")
                     count = connection.execute(count_query).scalar()
                     stats[table] = count
-                except:
+                except Exception:
                     stats[table] = "Error al contar"
 
         return {
@@ -203,15 +196,12 @@ async def get_connection_info(current_user: Usuario = Depends(require_admin)):
     """
     try:
         with engine.connect() as connection:
-            # Obtener versión de PostgreSQL
             version_query = text("SELECT version()")
             version = connection.execute(version_query).scalar()
 
-            # Obtener nombre de la base de datos actual
             db_query = text("SELECT current_database()")
             db_name = connection.execute(db_query).scalar()
 
-            # Obtener usuario actual
             user_query = text("SELECT current_user")
             db_user = connection.execute(user_query).scalar()
 

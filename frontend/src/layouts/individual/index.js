@@ -1,33 +1,19 @@
-/**
-=========================================================
-* Material Dashboard 2 React - Análisis Individual
-=========================================================
-*/
-
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-
-// @mui material components
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
+import Icon from "@mui/material/Icon";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-
-// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 import MDAvatar from "components/MDAvatar";
 import MDAlert from "components/MDAlert";
-
-// Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-
-// Imagen por defecto para estudiantes
 import defaultStudentImage from "assets/images/Estudiante.jpg";
-
 import { API_ENDPOINTS } from "../../config/api";
 
 function IndividualAnalysis() {
@@ -39,29 +25,25 @@ function IndividualAnalysis() {
   const [studentData, setStudentData] = useState(null);
   const [error, setError] = useState(null);
   const [riskFilter, setRiskFilter] = useState("Todos");
-  const [searchText, setSearchText] = useState(""); // Para controlar el input
+  const [searchText, setSearchText] = useState("");
   const [hasValidData, setHasValidData] = useState(false);
 
-  // Cargar lista de estudiantes al montar el componente
   useEffect(() => {
     fetchStudents();
 
-    // Función para escuchar cuando se sube un nuevo CSV (como en reporte general)
     const handleCsvUploaded = () => {
-      console.log("🔄 CSV cargado, actualizando estudiantes en análisis individual...");
+      console.log("CSV cargado, actualizando estudiantes en análisis individual...");
       setTimeout(() => {
         fetchStudents();
       }, 1000);
     };
 
-    // Funcion para escuchar cambios en localStorage
     const handleStorageChange = (e) => {
       if ((e.key === "csv_uploaded" && e.newValue) || e.key === "latest_predictions") {
         fetchStudents();
       }
     };
 
-    // Escuchar eventos de CSV cargado
     window.addEventListener("csvUploaded", handleCsvUploaded);
     window.addEventListener("storage", handleStorageChange);
 
@@ -69,11 +51,10 @@ function IndividualAnalysis() {
       window.removeEventListener("csvUploaded", handleCsvUploaded);
       window.removeEventListener("storage", handleStorageChange);
     };
-  }, []); // Solo ejecutar una vez al montar
+  }, []);
 
-  // Función separada para verificar estudiantes preseleccionados
+  // Prioridad de resolución de estudiante preseleccionado: 1) query param, 2) router state, 3) localStorage
   const checkPreselectedStudent = useCallback(() => {
-    // Primero verificar desde URL parameters (desde Resultados Completos)
     const studentIdFromUrl = searchParams.get("studentId");
     if (studentIdFromUrl && students.length > 0) {
       const studentFromUrl = students.find(
@@ -84,31 +65,28 @@ function IndividualAnalysis() {
       );
 
       if (studentFromUrl) {
-        console.log("📊 Estudiante encontrado desde URL:", studentFromUrl);
+        console.log("Estudiante encontrado desde URL:", studentFromUrl);
         setSelectedStudent(studentFromUrl);
         processStudentData(studentFromUrl);
         return;
       }
     }
 
-    // Segundo: verificar desde state (navegación directa)
     if (location.state?.preselectedStudent) {
       const student = location.state.preselectedStudent;
-      console.log("📊 Estudiante preseleccionado desde state:", student);
+      console.log("Estudiante preseleccionado desde state:", student);
       setSelectedStudent(student);
       processStudentData(student);
       return;
     }
 
-    // Tercero: verificar desde localStorage (respaldo)
     const storedStudent = localStorage.getItem("selected_student_for_analysis");
     if (storedStudent) {
       try {
         const student = JSON.parse(storedStudent);
-        console.log("📊 Estudiante preseleccionado desde localStorage:", student);
+        console.log("Estudiante preseleccionado desde localStorage:", student);
         setSelectedStudent(student);
         processStudentData(student);
-        // Limpiar el localStorage después de usar
         localStorage.removeItem("selected_student_for_analysis");
       } catch (e) {
         console.error("Error parsing preselected student:", e);
@@ -116,19 +94,16 @@ function IndividualAnalysis() {
     }
   }, [students, searchParams, location.state]);
 
-  // Efecto separado para verificar estudiante preseleccionado
   useEffect(() => {
     if (students.length > 0) {
       checkPreselectedStudent();
     }
   }, [students.length, checkPreselectedStudent]);
 
-  // Función para procesar los datos del estudiante (separada de handleStudentSelect)
   const processStudentData = (student) => {
     setError(null);
 
     try {
-      // Usar datos reales del estudiante seleccionado
       const realStudentData = {
         ...student,
         factoresRiesgo: [
@@ -174,7 +149,7 @@ function IndividualAnalysis() {
       };
 
       setStudentData(realStudentData);
-      console.log("✅ Datos del estudiante procesados:", realStudentData);
+      console.log("Datos del estudiante procesados:", realStudentData);
     } catch (err) {
       console.error("Error procesando datos del estudiante:", err);
       setError("Error cargando datos del estudiante");
@@ -192,18 +167,15 @@ function IndividualAnalysis() {
       const data = await response.json();
 
       if (data.length > 0) {
-        console.log("📊 Datos RAW desde backend (primeros 3 estudiantes):", data.slice(0, 3));
+        console.log("Datos RAW desde backend (primeros 3 estudiantes):", data.slice(0, 3));
 
-        // Procesar los datos de forma más directa
         const formattedStudents = data.map((student) => {
-          console.log(`🔍 Procesando estudiante: ${student.name}`, student);
+          console.log(`Procesando estudiante: ${student.name}`, student);
 
-          // Extraer y convertir los valores correctamente
           let nota = 0;
           let asistencia = 0;
           let conducta = "Regular";
 
-          // Buscar primero en localStorage para datos completos
           try {
             const storedPredictions = localStorage.getItem("latest_predictions");
             if (storedPredictions) {
@@ -217,7 +189,7 @@ function IndividualAnalysis() {
 
               if (fullStudentData) {
                 console.log(
-                  `✅ Datos completos encontrados en localStorage para ${student.name}:`,
+                  `Datos completos encontrados en localStorage para ${student.name}:`,
                   fullStudentData
                 );
                 nota = parseFloat(fullStudentData.nota_final || fullStudentData.nota || 0);
@@ -229,33 +201,31 @@ function IndividualAnalysis() {
             console.warn("Error accediendo localStorage:", e);
           }
 
-          // Si no se encontraron datos en localStorage, usar datos del backend
           if (nota === 0 && asistencia === 0) {
-            console.log(`⚠️ Usando datos del backend para ${student.name}`);
-            // Convertir string a números si es necesario
+            console.log(`Usando datos del backend para ${student.name}`);
             nota = parseFloat(student.nota || student.nota_final || 0);
             asistencia = parseFloat(student.asistencia || 0);
             conducta = student.conducta || "Regular";
           }
 
-          console.log(`📝 Valores finales para ${student.name}:`, { nota, asistencia, conducta });
+          console.log(`Valores finales para ${student.name}:`, { nota, asistencia, conducta });
 
           return {
             student_id: student.student_id,
             name: student.name,
-            nota: nota,
-            asistencia: asistencia,
+            nota,
+            asistencia,
             risk_level: student.risk_level || "Bajo",
-            conducta: conducta,
+            conducta,
             ...student,
           };
         });
 
         setStudents(formattedStudents);
         setHasValidData(true);
-        console.log("✅ Estudiantes formateados finales:", formattedStudents.slice(0, 2));
+        console.log("Estudiantes formateados finales:", formattedStudents.slice(0, 2));
       } else {
-        console.log("📭 No hay datos en el backend, mostrando estado vacío");
+        console.log("No hay datos en el backend, mostrando estado vacío");
         setStudents([]);
         setHasValidData(false);
       }
@@ -273,25 +243,22 @@ function IndividualAnalysis() {
     setError(null);
 
     try {
-      // Extraer datos con múltiples posibles nombres de campos
       const nota = student.nota || student.nota_final || 0;
       const asistencia = student.asistencia || 0;
       const conducta = student.conducta || "Regular";
 
-      console.log("📊 Datos del estudiante seleccionado:", {
+      console.log("Datos del estudiante seleccionado:", {
         nota,
         asistencia,
         conducta,
         originalStudent: student,
       });
 
-      // Usar datos reales del estudiante seleccionado (del CSV cargado)
       const realStudentData = {
         ...student,
-        nota: nota, // Asegurar que nota esté disponible
-        asistencia: asistencia, // Asegurar que asistencia esté disponible
-        conducta: conducta, // Asegurar que conducta esté disponible
-        // Usar datos reales en lugar de simulados
+        nota,
+        asistencia,
+        conducta,
         factoresRiesgo: [
           {
             factor: "Asistencia",
@@ -330,7 +297,7 @@ function IndividualAnalysis() {
       };
 
       setStudentData(realStudentData);
-      console.log("✅ Datos del estudiante procesados:", realStudentData);
+      console.log("Datos del estudiante procesados:", realStudentData);
     } catch (err) {
       console.error("Error procesando datos del estudiante:", err);
       setError("Error cargando datos del estudiante");
@@ -350,24 +317,19 @@ function IndividualAnalysis() {
     }
   };
 
-  const getRandomImage = (studentId) => {
-    return defaultStudentImage;
-  };
+  const getRandomImage = () => defaultStudentImage;
 
-  // Filtrado memoizado que se recalcula cuando cambian students, riskFilter o searchText
   const filteredAndSearchedStudents = useMemo(() => {
-    console.log("🔍 Recalculando filtrado con:", {
+    console.log("Recalculando filtrado con:", {
       riskFilter,
       searchText,
       totalStudents: students.length,
     });
 
-    // Primero filtrar por riesgo
     let filtered = students.filter((student) => {
       return riskFilter === "Todos" || student.risk_level === riskFilter;
     });
 
-    // Luego filtrar por texto de búsqueda si hay texto
     if (searchText && searchText.trim().length > 0) {
       const searchValue = searchText.toLowerCase().trim();
       filtered = filtered.filter((student) => {
@@ -375,46 +337,42 @@ function IndividualAnalysis() {
         const idMatch = student.student_id?.toString().includes(searchValue);
         return nameMatch || idMatch;
       });
-      console.log(`📝 Filtrado por "${searchText}": ${filtered.length} resultados`);
+      console.log(`Filtrado por "${searchText}": ${filtered.length} resultados`);
     }
 
     return filtered;
   }, [students, riskFilter, searchText]);
 
-  // Función para manejar el cambio en el input del Autocomplete
   const handleInputChange = useCallback((event, newInputValue, reason) => {
-    console.log("🎯 Input change:", { newInputValue, reason });
+    console.log("Input change:", { newInputValue, reason });
 
-    // Solo actualizar si el cambio es por typing del usuario
     if (reason === "input") {
       setSearchText(newInputValue || "");
     }
 
-    // Si se limpia el input, también limpiar nuestro estado
     if (reason === "clear") {
       setSearchText("");
     }
   }, []);
 
-  // Función para limpiar la búsqueda cuando cambie el filtro de riesgo
   const handleRiskFilterChange = useCallback((newFilter) => {
-    console.log("🔄 Cambiando filtro de riesgo:", newFilter);
+    console.log("Cambiando filtro de riesgo:", newFilter);
     setRiskFilter(newFilter);
-    setSearchText(""); // Limpiar búsqueda al cambiar filtro
+    setSearchText("");
   }, []);
 
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox py={3}>
-        {/* Mostrar vista vacía si no hay datos válidos */}
         {!hasValidData ? (
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Card>
                 <MDBox p={5} textAlign="center">
                   <MDTypography variant="h3" color="text" mb={3}>
-                    📋 No hay datos disponibles
+                    <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>assignment</Icon>
+                    No hay datos disponibles
                   </MDTypography>
                   <MDTypography variant="h6" color="text" mb={2}>
                     Para usar el análisis individual, necesitas cargar un archivo CSV primero
@@ -435,9 +393,7 @@ function IndividualAnalysis() {
             </Grid>
           </Grid>
         ) : (
-          // Vista normal con datos
           <Grid container spacing={3}>
-            {/* Buscador de estudiantes */}
             <Grid item xs={12}>
               <Card>
                 <MDBox p={3}>
@@ -448,7 +404,6 @@ function IndividualAnalysis() {
                     Busca y selecciona un estudiante para ver su análisis detallado
                   </MDTypography>
 
-                  {/* Filtros por nivel de riesgo */}
                   <MDBox mb={3}>
                     <MDTypography variant="button" fontWeight="bold" mb={2} display="block">
                       Filtrar por nivel de riesgo:
@@ -498,7 +453,7 @@ function IndividualAnalysis() {
                   </MDBox>
 
                   <Autocomplete
-                    key={`${riskFilter}-${students.length}`} // Forzar re-render cuando cambien los datos
+                    key={`${riskFilter}-${students.length}`}
                     options={filteredAndSearchedStudents}
                     getOptionLabel={(option) => `${option.name} (ID: ${option.student_id})`}
                     onChange={handleStudentSelect}
@@ -542,7 +497,6 @@ function IndividualAnalysis() {
                         </MDBox>
                       </li>
                     )}
-                    // Configuraciones adicionales para mejor control
                     clearOnEscape
                     disableCloseOnSelect={false}
                     blurOnSelect
@@ -554,10 +508,8 @@ function IndividualAnalysis() {
               </Card>
             </Grid>
 
-            {/* Información del estudiante seleccionado */}
             {selectedStudent && (
               <>
-                {/* Información básica */}
                 <Grid item xs={12} md={4}>
                   <Card sx={{ height: "100%" }}>
                     <MDBox p={3} textAlign="center">
@@ -616,7 +568,6 @@ function IndividualAnalysis() {
                   </Card>
                 </Grid>
 
-                {/* Factores de riesgo */}
                 <Grid item xs={12} md={8}>
                   <Card sx={{ height: "100%" }}>
                     <MDBox p={3}>
@@ -647,7 +598,6 @@ function IndividualAnalysis() {
                             </MDAlert>
                           </MDBox>
 
-                          {/* Barra de progreso visual mejorada */}
                           <MDBox mb={2}>
                             <MDBox
                               sx={{
@@ -662,28 +612,25 @@ function IndividualAnalysis() {
                               <MDBox
                                 sx={{
                                   width: (() => {
-                                    // Calcular el ancho dinámicamente según el factor y su valor
+                                    // Normalización de distintas escalas (0-100%, 0-20 y cualitativa) a porcentaje visual
                                     if (factor.factor === "Asistencia") {
-                                      // Para asistencia: usar el porcentaje directamente
                                       const asistenciaValue = parseFloat(
                                         factor.valor.replace("%", "")
                                       );
                                       return `${Math.min(100, Math.max(0, asistenciaValue))}%`;
                                     } else if (factor.factor === "Notas") {
-                                      // Para notas: convertir de escala 0-20 a porcentaje 0-100
                                       const notaValue = parseFloat(factor.valor.split("/")[0]);
                                       const porcentaje = (notaValue / 20) * 100;
                                       return `${Math.min(100, Math.max(0, porcentaje))}%`;
                                     } else if (factor.factor === "Conducta") {
-                                      // Para conducta: mapear valores cualitativos a porcentajes
                                       const conductaValue = factor.valor.toLowerCase();
                                       if (conductaValue === "mala") return "25%";
                                       if (conductaValue === "regular") return "50%";
                                       if (conductaValue === "buena") return "75%";
                                       if (conductaValue === "excelente") return "100%";
-                                      return "50%"; // valor por defecto para "Regular"
+                                      return "50%";
                                     }
-                                    return "50%"; // fallback
+                                    return "50%";
                                   })(),
                                   height: "100%",
                                   backgroundColor:
@@ -714,25 +661,42 @@ function IndividualAnalysis() {
                             </MDBox>
                           </MDBox>
 
-                          {/* Descripción y rangos */}
                           <MDBox p={2} sx={{ backgroundColor: "#f8f9fa", borderRadius: 1 }}>
                             <MDTypography variant="body2" color="text" mb={1}>
-                              📊 {factor.descripcion}
+                              <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>assessment</Icon>
+                              {factor.descripcion}
                             </MDTypography>
 
-                            {/* Mostrar rangos específicos según el factor */}
                             {factor.factor === "Asistencia" && (
                               <MDBox mt={1}>
                                 <MDTypography variant="caption" color="text">
                                   <strong>Rangos:</strong>
                                   <span style={{ color: "#4caf50", marginLeft: "8px" }}>
-                                    ✅ Bajo riesgo: ≥85%
+                                    <Icon
+                                      sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                      fontSize="small"
+                                    >
+                                      check_circle
+                                    </Icon>
+                                    Bajo riesgo: ≥85%
                                   </span>
                                   <span style={{ color: "#ff9800", marginLeft: "8px" }}>
-                                    ⚠️ Medio riesgo: 70-84%
+                                    <Icon
+                                      sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                      fontSize="small"
+                                    >
+                                      warning
+                                    </Icon>
+                                    Medio riesgo: 70-84%
                                   </span>
                                   <span style={{ color: "#f44336", marginLeft: "8px" }}>
-                                    ❌ Alto riesgo: &lt;70%
+                                    <Icon
+                                      sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                      fontSize="small"
+                                    >
+                                      error
+                                    </Icon>
+                                    Alto riesgo: &lt;70%
                                   </span>
                                 </MDTypography>
                               </MDBox>
@@ -743,13 +707,31 @@ function IndividualAnalysis() {
                                 <MDTypography variant="caption" color="text">
                                   <strong>Rangos:</strong>
                                   <span style={{ color: "#4caf50", marginLeft: "8px" }}>
-                                    ✅ Bajo riesgo: ≥14/20
+                                    <Icon
+                                      sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                      fontSize="small"
+                                    >
+                                      check_circle
+                                    </Icon>
+                                    Bajo riesgo: ≥14/20
                                   </span>
                                   <span style={{ color: "#ff9800", marginLeft: "8px" }}>
-                                    ⚠️ Medio riesgo: 11-13.9/20
+                                    <Icon
+                                      sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                      fontSize="small"
+                                    >
+                                      warning
+                                    </Icon>
+                                    Medio riesgo: 11-13.9/20
                                   </span>
                                   <span style={{ color: "#f44336", marginLeft: "8px" }}>
-                                    ❌ Alto riesgo: &lt;11/20
+                                    <Icon
+                                      sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                      fontSize="small"
+                                    >
+                                      error
+                                    </Icon>
+                                    Alto riesgo: &lt;11/20
                                   </span>
                                 </MDTypography>
                               </MDBox>
@@ -760,13 +742,31 @@ function IndividualAnalysis() {
                                 <MDTypography variant="caption" color="text">
                                   <strong>Categorías:</strong>
                                   <span style={{ color: "#4caf50", marginLeft: "8px" }}>
-                                    ✅ Bajo riesgo: Buena/Excelente
+                                    <Icon
+                                      sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                      fontSize="small"
+                                    >
+                                      check_circle
+                                    </Icon>
+                                    Bajo riesgo: Buena/Excelente
                                   </span>
                                   <span style={{ color: "#ff9800", marginLeft: "8px" }}>
-                                    ⚠️ Medio riesgo: Regular
+                                    <Icon
+                                      sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                      fontSize="small"
+                                    >
+                                      warning
+                                    </Icon>
+                                    Medio riesgo: Regular
                                   </span>
                                   <span style={{ color: "#f44336", marginLeft: "8px" }}>
-                                    ❌ Alto riesgo: Mala
+                                    <Icon
+                                      sx={{ verticalAlign: "middle", mr: 0.5 }}
+                                      fontSize="small"
+                                    >
+                                      error
+                                    </Icon>
+                                    Alto riesgo: Mala
                                   </span>
                                 </MDTypography>
                               </MDBox>
@@ -775,13 +775,12 @@ function IndividualAnalysis() {
                         </MDBox>
                       ))}
 
-                      {/* Recomendaciones mejoradas */}
                       <MDBox mt={4} p={3} sx={{ backgroundColor: "#e3f2fd", borderRadius: 2 }}>
                         <MDTypography variant="h6" mb={2} color="info">
-                          🎯 Recomendaciones Personalizadas
+                          <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>psychology</Icon>
+                          Recomendaciones Personalizadas
                         </MDTypography>
 
-                        {/* Recomendaciones específicas por factor */}
                         {studentData?.factoresRiesgo?.map(
                           (factor, index) =>
                             factor.impacto !== "Bajo" && (
@@ -792,7 +791,10 @@ function IndividualAnalysis() {
                                   color="text"
                                   display="block"
                                 >
-                                  📌 {factor.factor} ({factor.impacto} riesgo - {factor.valor}):
+                                  <Icon sx={{ verticalAlign: "middle", mr: 0.5 }} fontSize="small">
+                                    push_pin
+                                  </Icon>
+                                  {factor.factor} ({factor.impacto} riesgo - {factor.valor}):
                                 </MDTypography>
                                 <ul style={{ marginTop: "4px", marginBottom: "8px" }}>
                                   {factor.factor === "Asistencia" && factor.impacto === "Alto" && (
@@ -894,15 +896,15 @@ function IndividualAnalysis() {
                             )
                         )}
 
-                        {/* Mensaje cuando todo está bien */}
                         {studentData?.factoresRiesgo?.every(
                           (factor) => factor.impacto === "Bajo"
                         ) && (
                           <MDBox>
                             <MDTypography variant="body2" color="success">
-                              🎉 ¡Excelente! Este estudiante mantiene un rendimiento satisfactorio
-                              en todas las áreas. Continuar con el seguimiento regular y reconocer
-                              sus logros.
+                              <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>check_circle</Icon>
+                              ¡Excelente! Este estudiante mantiene un rendimiento satisfactorio en
+                              todas las áreas. Continuar con el seguimiento regular y reconocer sus
+                              logros.
                             </MDTypography>
                           </MDBox>
                         )}
@@ -911,7 +913,6 @@ function IndividualAnalysis() {
                   </Card>
                 </Grid>
 
-                {/* Historial académico */}
                 <Grid item xs={12}>
                   <Card>
                     <MDBox p={3}>
@@ -923,7 +924,8 @@ function IndividualAnalysis() {
                         <Grid item xs={12} md={6}>
                           <MDBox p={2} sx={{ backgroundColor: "#f8f9fa", borderRadius: 2 }}>
                             <MDTypography variant="button" fontWeight="bold" mb={2} display="block">
-                              📊 Evolución de Notas
+                              <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>trending_up</Icon>
+                              Evolución de Notas
                             </MDTypography>
                             {studentData?.historialNotas?.map((registro, index) => (
                               <MDBox
@@ -944,7 +946,8 @@ function IndividualAnalysis() {
                         <Grid item xs={12} md={6}>
                           <MDBox p={2} sx={{ backgroundColor: "#f8f9fa", borderRadius: 2 }}>
                             <MDTypography variant="button" fontWeight="bold" mb={2} display="block">
-                              📅 Evolución de Asistencia
+                              <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>event_available</Icon>
+                              Evolución de Asistencia
                             </MDTypography>
                             {studentData?.historialAsistencia?.map((registro, index) => (
                               <MDBox
@@ -968,13 +971,13 @@ function IndividualAnalysis() {
               </>
             )}
 
-            {/* Estado inicial */}
             {!selectedStudent && (
               <Grid item xs={12}>
                 <Card>
                   <MDBox p={5} textAlign="center">
                     <MDTypography variant="h4" color="text" mb={2}>
-                      👤 Selecciona un Estudiante
+                      <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>person</Icon>
+                      Selecciona un Estudiante
                     </MDTypography>
                     <MDTypography variant="body1" color="text">
                       Usa el buscador arriba para encontrar y analizar a un estudiante específico

@@ -1,46 +1,23 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
-// @mui material components
+import React, { useEffect, useState, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Grid from "@mui/material/Grid";
-
-// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
-
-// Material Dashboard 2 React example components
+import MDAlert from "components/MDAlert";
+import MDButton from "components/MDButton";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import ReportsBarChart from "examples/Charts/BarCharts/ReportsBarChart";
 import ReportsLineChart from "examples/Charts/LineCharts/ReportsLineChart";
-
-// Dashboard components
 import Projects from "layouts/dashboard/components/Projects";
 import OrdersOverview from "layouts/dashboard/components/OrdersOverview";
 import MediumRiskStudents from "layouts/dashboard/components/MediumRiskStudents";
-import React, { useEffect, useState, useCallback } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import MDAlert from "components/MDAlert";
-import MDButton from "components/MDButton";
 import { API_ENDPOINTS } from "../../config/api";
 
 function Dashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  // Estado para los datos de los gráficos
   const [barChartData, setBarChartData] = useState({
     labels: ["Lun", "Mar", "Mié", "Jue", "Vie"],
     datasets: [
@@ -61,7 +38,6 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Función para verificar si hay datos de CSV válidos
   const hasValidCsvData = () => {
     try {
       const storedPredictions = localStorage.getItem("latest_predictions");
@@ -76,11 +52,9 @@ function Dashboard() {
     }
   };
 
-  // Función para cargar datos de asistencia (envuelta en useCallback)
   const loadAttendanceData = useCallback(() => {
-    // Verificar si hay datos válidos primero
     if (!hasValidCsvData()) {
-      console.log("📭 No hay CSV cargado, no se cargarán datos de asistencia");
+      console.log("No hay CSV cargado, no se cargarán datos de asistencia");
       setBarChartData({
         labels: ["Lun", "Mar", "Mié", "Jue", "Vie"],
         datasets: [
@@ -96,20 +70,20 @@ function Dashboard() {
 
     fetch(API_ENDPOINTS.ATTENDANCE_CHART)
       .then((res) => {
-        console.log("📡 Respuesta del servidor recibida:", res.status);
+        console.log("Respuesta del servidor recibida:", res.status);
         if (!res.ok) throw new Error("No se pudo obtener asistencia");
         return res.json();
       })
       .then((data) => {
-        console.log("📊 Datos recibidos:", data);
+        console.log("Datos recibidos:", data);
         if (data.labels && data.datasets && data.datasets.length > 0) {
-          console.log("✅ Datos válidos encontrados:", data.datasets.length, "datasets");
+          console.log("Datos válidos encontrados:", data.datasets.length, "datasets");
           setBarChartData({
             labels: data.labels,
             datasets: data.datasets,
           });
         } else {
-          console.log("⚠️ No se encontraron datasets válidos");
+          console.log("No se encontraron datasets válidos");
           setBarChartData({
             labels: ["Lun", "Mar", "Mié", "Jue", "Vie"],
             datasets: [
@@ -123,7 +97,7 @@ function Dashboard() {
         }
       })
       .catch((err) => {
-        console.error("❌ Error cargando asistencia:", err);
+        console.error("Error cargando asistencia:", err);
         setBarChartData({
           labels: ["Lun", "Mar", "Mié", "Jue", "Vie"],
           datasets: [
@@ -135,13 +109,11 @@ function Dashboard() {
           ],
         });
       });
-  }, []); // Sin dependencias porque usa estados locales y funciones estables
+  }, []);
 
-  // Función para cargar resumen de riesgo (envuelta en useCallback)
   const loadRiskData = useCallback(() => {
-    // Verificar si hay datos válidos primero
     if (!hasValidCsvData()) {
-      console.log("📭 No hay CSV cargado, no se cargarán datos de riesgo");
+      console.log("No hay CSV cargado, no se cargarán datos de riesgo");
       setLineChartData({
         labels: [
           "Ene",
@@ -215,23 +187,19 @@ function Dashboard() {
         });
         setLoading(false);
       });
-  }, []); // Sin dependencias porque usa estados locales y funciones estables
+  }, []);
 
   useEffect(() => {
-    // Mostrar notificación si se viene desde la carga de CSV
     if (location.state?.message) {
       setShowSuccessAlert(true);
-      // Ocultar la notificación después de 5 segundos
       setTimeout(() => {
         setShowSuccessAlert(false);
       }, 5000);
     }
 
-    // Cargar datos iniciales solo una vez
     loadAttendanceData();
     loadRiskData();
 
-    // Funcion para escuchar cambios de datos (cuando se sube un nuevo CSV)
     const handleStorageChange = (e) => {
       if (e.key === "csv_uploaded" && e.newValue) {
         loadAttendanceData();
@@ -239,22 +207,18 @@ function Dashboard() {
       }
     };
 
-    // Función para escuchar evento directo de CSV cargado
-    const handleCsvUploaded = (e) => {
-      console.log("🔄 Evento directo: CSV cargado, actualizando gráficos inmediatamente...");
+    const handleCsvUploaded = () => {
+      console.log("Evento directo: CSV cargado, actualizando gráficos inmediatamente...");
+      // Breve espera para asegurar que el backend haya persistido los datos antes de consultar
       setTimeout(() => {
         loadAttendanceData();
         loadRiskData();
-      }, 1000); // Pequeña delay para asegurar que el backend haya procesado los datos
+      }, 1000);
     };
 
-    // Escuchar cambios en localStorage para detectar cuando se sube un CSV
     window.addEventListener("storage", handleStorageChange);
-
-    // Escuchar evento personalizado para actualización inmediata
     window.addEventListener("csvUploaded", handleCsvUploaded);
 
-    // Limpieza al desmontar el componente
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("csvUploaded", handleCsvUploaded);
@@ -268,7 +232,6 @@ function Dashboard() {
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox py={3}>
-        {/* Botón para ver resultados detallados */}
         {location.state?.predictions && (
           <MDBox mb={3} textAlign="center">
             <MDButton

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from config import Base
 import datetime
@@ -12,14 +12,12 @@ class UploadHistory(Base):
     original_filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)
     upload_date = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
-    user_id = Column(Integer, ForeignKey('usuarios.id', ondelete='SET NULL'), nullable=True)  # Ahora permite NULL
+    user_id = Column(Integer, ForeignKey('usuarios.id', ondelete='SET NULL'), nullable=True)
 
-    # Estadísticas del archivo
     total_students = Column(Integer, default=0)
     processed_students = Column(Integer, default=0)
     failed_students = Column(Integer, default=0)
 
-    # Estadísticas de riesgo
     high_risk_count = Column(Integer, default=0)
     medium_risk_count = Column(Integer, default=0)
     low_risk_count = Column(Integer, default=0)
@@ -27,17 +25,11 @@ class UploadHistory(Base):
     medium_risk_percentage = Column(Float, default=0.0)
     low_risk_percentage = Column(Float, default=0.0)
 
-    # Estado del procesamiento
-    status = Column(String(50), default='processing')  # processing, success, error, partial
+    status = Column(String(50), default='processing')
     error_message = Column(Text, nullable=True)
-
-    # Notas y observaciones
     notes = Column(Text, nullable=True)
+    processing_time = Column(Float, nullable=True)
 
-    # Tiempo de procesamiento
-    processing_time = Column(Float, nullable=True)  # en segundos
-
-    # Relaciones
     user = relationship("Usuario", back_populates="upload_history")
     predictions = relationship("UploadPrediction", back_populates="upload_history", cascade="all, delete-orphan")
 
@@ -73,29 +65,23 @@ class UploadPrediction(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     upload_history_id = Column(Integer, ForeignKey('upload_history.id', ondelete='CASCADE'), nullable=False)
 
-    # Datos del estudiante
     estudiante_id = Column(Integer, nullable=False)
     nombre = Column(String(255), nullable=True)
 
-    # Datos de entrada
     nota_final = Column(Float, nullable=False)
     conducta = Column(String(50), nullable=True)
     asistencia = Column(Float, nullable=False)
     inasistencia = Column(Float, nullable=True)
 
-    # Resultados de predicción
     resultado_prediccion = Column(String(50), nullable=False)
     riesgo_desercion = Column(String(20), nullable=True)
     probabilidad_desercion = Column(Float, nullable=True)
 
-    # Factores de riesgo identificados
-    risk_factors = Column(Text, nullable=True)  # JSON string con factores
+    risk_factors = Column(Text, nullable=True)
 
-    # Tiempo de predicción
     tiempo_prediccion = Column(Float, nullable=False)
     fecha_prediccion = Column(DateTime, default=datetime.datetime.utcnow)
 
-    # Relación
     upload_history = relationship("UploadHistory", back_populates="predictions")
 
     def to_dict(self):

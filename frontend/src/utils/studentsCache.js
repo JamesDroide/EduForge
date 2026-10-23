@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { API_ENDPOINTS } from "../config/api";
 
-// Cache global para datos de estudiantes
 class StudentsCache {
   constructor() {
     this.cache = new Map();
@@ -11,12 +10,10 @@ class StudentsCache {
     this.pendingPromise = null;
   }
 
-  // Verificar si el cache es valido
   isValid() {
     return this.lastFetch && Date.now() - this.lastFetch < this.CACHE_DURATION;
   }
 
-  // Obtener datos del cache o hacer fetch si es necesario
   async getStudents(forceRefresh = false) {
     if (!forceRefresh && this.isValid() && this.cache.has("students")) {
       return this.cache.get("students");
@@ -56,7 +53,6 @@ class StudentsCache {
     return await this.pendingPromise;
   }
 
-  // Procesar datos una sola vez
   processStudentData(rawData) {
     if (!rawData || rawData.length === 0) {
       return [];
@@ -75,7 +71,6 @@ class StudentsCache {
       }
 
       return rawData.map((student) => {
-        // Buscar datos completos
         const fullData =
           fullDataMap.get(student.student_id?.toString()) || fullDataMap.get(student.name) || {};
 
@@ -98,7 +93,6 @@ class StudentsCache {
     }
   }
 
-  // Invalidar cache
   invalidate() {
     this.cache.clear();
     this.lastFetch = null;
@@ -107,10 +101,8 @@ class StudentsCache {
   }
 }
 
-// Instancia global del cache
 const studentsCache = new StudentsCache();
 
-// Hook personalizado para usar el cache
 export const useStudentsCache = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(false);

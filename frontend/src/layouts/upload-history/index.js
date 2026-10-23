@@ -38,7 +38,7 @@ function UploadHistory() {
   const [loadingPredictions, setLoadingPredictions] = useState(false);
   const [statistics, setStatistics] = useState(null);
   const [alert, setAlert] = useState({ show: false, message: "", color: "info" });
-  const [viewMode, setViewMode] = useState(0); // 0: Lista, 1: Comparar
+  const [viewMode, setViewMode] = useState(0);
 
   const showAlert = (message, color) => {
     setAlert({ show: true, message, color });
@@ -306,7 +306,6 @@ function UploadHistory() {
           </MDBox>
         )}
 
-        {/* Estadísticas Generales */}
         {statistics && (
           <Grid container spacing={3} mb={3}>
             <Grid item xs={12} md={3}>
@@ -360,7 +359,6 @@ function UploadHistory() {
           </Grid>
         )}
 
-        {/* Tabla de Historial */}
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Card>
@@ -375,14 +373,12 @@ function UploadHistory() {
                 coloredShadow="info"
               >
                 <Grid container alignItems="center" spacing={2}>
-                  {/* Título centrado */}
                   <Grid item xs={12} md={4}>
                     <MDTypography variant="h5" color="white" fontWeight="bold">
                       Historial de Cargas CSV
                     </MDTypography>
                   </Grid>
 
-                  {/* Tabs centrados */}
                   <Grid item xs={12} md={4} sx={{ display: "flex", justifyContent: "center" }}>
                     <Tabs
                       value={viewMode}
@@ -424,7 +420,6 @@ function UploadHistory() {
                     </Tabs>
                   </Grid>
 
-                  {/* Buscador a la derecha */}
                   <Grid item xs={12} md={4}>
                     {viewMode === 0 && (
                       <MDBox display="flex" gap={1} justifyContent="flex-end">
@@ -506,7 +501,6 @@ function UploadHistory() {
           </Grid>
         </Grid>
 
-        {/* Dialog de Predicciones */}
         <Dialog
           open={showPredictions}
           onClose={() => setShowPredictions(false)}

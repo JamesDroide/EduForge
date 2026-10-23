@@ -76,7 +76,6 @@ async def create_user(
         )
 
     try:
-        # Verificar si el usuario ya existe
         existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
         if existing_user:
             raise HTTPException(
@@ -84,7 +83,6 @@ async def create_user(
                 detail="El nombre de usuario ya está en uso"
             )
 
-        # Verificar si el email ya existe
         existing_email = db.query(Usuario).filter(Usuario.email == user_data.email).first()
         if existing_email:
             raise HTTPException(
@@ -92,7 +90,6 @@ async def create_user(
                 detail="El correo electrónico ya está en uso"
             )
 
-        # Crear el nuevo usuario
         hashed_password = get_password_hash(user_data.password)
         new_user = Usuario(
             username=user_data.username,
@@ -103,11 +100,10 @@ async def create_user(
         )
 
         db.add(new_user)
-        db.flush()  # Forzar escritura a BD antes del commit
+        db.flush()
         db.commit()
         db.refresh(new_user)
 
-        # Verificar que realmente se guardó
         verification = db.query(Usuario).filter(Usuario.id == new_user.id).first()
         if not verification:
             raise Exception("El usuario no se guardó correctamente en la base de datos")
@@ -150,7 +146,6 @@ async def update_user(
                 detail="Usuario no encontrado"
             )
 
-        # Verificar si el nuevo username ya está en uso (si se cambió)
         if user_data.username and user_data.username != user.username:
             existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
             if existing_user:
@@ -160,7 +155,6 @@ async def update_user(
                 )
             user.username = user_data.username
 
-        # Verificar si el nuevo email ya está en uso (si se cambió)
         if user_data.email and user_data.email != user.email:
             existing_email = db.query(Usuario).filter(Usuario.email == user_data.email).first()
             if existing_email:
@@ -170,7 +164,6 @@ async def update_user(
                 )
             user.email = user_data.email
 
-        # Actualizar otros campos
         if user_data.rol is not None:
             user.rol = user_data.rol
         if user_data.is_active is not None:
@@ -217,7 +210,6 @@ async def change_user_password(
                 detail="Usuario no encontrado"
             )
 
-        # Actualizar la contraseña
         user.password_hash = get_password_hash(password_data.new_password)
         db.commit()
 
@@ -258,7 +250,6 @@ async def delete_user(
                 detail="Usuario no encontrado"
             )
 
-        # No permitir que el administrador se elimine a sí mismo
         if user.id == current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

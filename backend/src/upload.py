@@ -7,28 +7,23 @@ from services.risk_service import clear_latest_predictions
 from services.attendance_service import clear_latest_csv_data
 from datetime import datetime
 
-# Usar la misma ruta que en main.py para consistencia
 UPLOAD_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "uploads"))
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def excel_date_to_str(excel_date):
-    # Excel date serial number to datetime
     try:
         if isinstance(excel_date, str):
-            # Si ya es string, verificar si es una fecha válida
             try:
                 datetime.strptime(excel_date, '%Y-%m-%d')
                 return excel_date
-            except:
+            except Exception:
                 try:
-                    datetime.strptime(excel_date, '%d/%m/%Y')
-                    # Convertir formato DD/MM/YYYY a YYYY-MM-DD
                     dt = datetime.strptime(excel_date, '%d/%m/%Y')
                     return dt.strftime('%Y-%m-%d')
-                except:
+                except Exception:
                     return '2025-01-01'
 
-        # Si es número (formato Excel)
+        # Base de serie temporal de Excel (30 de diciembre de 1899)
         base_date = datetime(1899, 12, 30)
         date = base_date + pd.to_timedelta(float(excel_date), unit='D')
         return date.strftime('%Y-%m-%d')
@@ -41,20 +36,17 @@ def clear_previous_data():
     """
     session = SessionLocal()
     try:
-        # Eliminar todos los registros de predicciones anteriores
         deleted_predictions = session.query(ResultadoPrediccion).delete()
-
-        # Eliminar todos los datos de estudiantes anteriores
         deleted_students = session.query(StudentData).delete()
 
         session.commit()
         clear_latest_predictions()
         clear_latest_csv_data()
-        print(f" Datos limpiados: {deleted_predictions} predicciones, {deleted_students} estudiantes")
+        print(f"Datos limpiados: {deleted_predictions} predicciones, {deleted_students} estudiantes")
 
     except Exception as e:
         session.rollback()
-        print(f" Error limpiando datos anteriores: {str(e)}")
+        print(f"Error limpiando datos anteriores: {str(e)}")
         raise e
     finally:
         session.close()
@@ -67,7 +59,6 @@ async def save_uploaded_file(file: UploadFile):
         content = await file.read()
         f.write(content)
 
-    # Procesar el archivo tabular y guardar los datos en la base de datos
     if safe_filename.lower().endswith(('.csv', '.xlsx', '.xls')):
         if safe_filename.lower().endswith(('.xlsx', '.xls')):
             df = pd.read_excel(file_path)

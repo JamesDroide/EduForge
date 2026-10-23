@@ -1,65 +1,26 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
 import { useState, useEffect, useMemo } from "react";
-
-// react-router components
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-
-// @mui material components
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import Icon from "@mui/material/Icon";
-
-// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
-
-// Material Dashboard 2 React example components
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
-
-// Material Dashboard 2 React themes
 import theme from "assets/theme";
 import themeRTL from "assets/theme/theme-rtl";
-
-// Material Dashboard 2 React Dark Mode themes
 import themeDark from "assets/theme-dark";
 import themeDarkRTL from "assets/theme-dark/theme-rtl";
-
-// RTL plugins
 import rtlPlugin from "stylis-plugin-rtl";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
-
-// Material Dashboard 2 React routes
 import routes from "routes";
-
-// Material Dashboard 2 React contexts
 import { useMaterialUIController, setMiniSidenav, setOpenConfigurator } from "context";
-
-// Images
 import brandWhite from "assets/images/logo-ct.png";
 import brandDark from "assets/images/logo-ct-dark.png";
 import Billing from "layouts/billing";
 import UploadData from "layouts/notifications";
-
-// Panel de Administración (independiente)
 import AdminLogin from "layouts/admin-panel/login";
 import UserManagement from "layouts/user-management";
-
-// Auth Provider
 import { AuthProvider } from "context/AuthContext";
 import PrivateRoute from "components/PrivateRoute";
 
@@ -79,7 +40,6 @@ export default function App() {
   const [rtlCache, setRtlCache] = useState(null);
   const { pathname } = useLocation();
 
-  // Cache for the rtl - Optimizado para evitar recreación
   const memoizedRtlCache = useMemo(() => {
     return createCache({
       key: "rtl",
@@ -91,7 +51,6 @@ export default function App() {
     setRtlCache(memoizedRtlCache);
   }, [memoizedRtlCache]);
 
-  // Open sidenav when mouse enter on mini sidenav
   const handleOnMouseEnter = () => {
     if (miniSidenav && !onMouseEnter) {
       setMiniSidenav(dispatch, false);
@@ -99,7 +58,6 @@ export default function App() {
     }
   };
 
-  // Close sidenav when mouse leave mini sidenav
   const handleOnMouseLeave = () => {
     if (onMouseEnter) {
       setMiniSidenav(dispatch, true);
@@ -107,21 +65,17 @@ export default function App() {
     }
   };
 
-  // Change the openConfigurator state
   const handleConfiguratorOpen = () => setOpenConfigurator(dispatch, !openConfigurator);
 
-  // Setting the dir attribute for the body element
   useEffect(() => {
     document.body.setAttribute("dir", direction);
   }, [direction]);
 
-  // Setting page scroll to 0 when changing the route
   useEffect(() => {
     document.documentElement.scrollTop = 0;
     document.scrollingElement.scrollTop = 0;
   }, [pathname]);
 
-  // Optimized getRoutes function with memoization
   const getRoutes = useMemo(() => {
     const processRoutes = (allRoutes) =>
       allRoutes.map((route) => {
@@ -168,7 +122,7 @@ export default function App() {
       <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
         <CssBaseline />
         <AuthProvider>
-          {/* Solo mostrar Sidenav si NO estamos en el panel de administración */}
+          {/* El panel de administracion opera con sesion y layout aislados del Sidenav general */}
           {layout === "dashboard" && !pathname.startsWith("/admin-panel") && (
             <>
               <Sidenav
@@ -202,7 +156,6 @@ export default function App() {
                 </PrivateRoute>
               }
             />
-            {/* Panel de Administración Independiente - URLs especiales */}
             <Route path="/admin-panel/login" element={<AdminLogin />} />
             <Route path="/admin-panel/usuarios" element={<UserManagement />} />
             <Route path="/" element={<Navigate to="/authentication/sign-in" />} />
@@ -215,7 +168,6 @@ export default function App() {
     <ThemeProvider theme={darkMode ? themeDark : theme}>
       <CssBaseline />
       <AuthProvider>
-        {/* Solo mostrar Sidenav si NO estamos en el panel de administración */}
         {layout === "dashboard" && !pathname.startsWith("/admin-panel") && (
           <>
             <Sidenav
@@ -249,7 +201,6 @@ export default function App() {
               </PrivateRoute>
             }
           />
-          {/* Panel de Administración Independiente - URLs especiales */}
           <Route path="/admin-panel/login" element={<AdminLogin />} />
           <Route path="/admin-panel/usuarios" element={<UserManagement />} />
           <Route path="/" element={<Navigate to="/authentication/sign-in" />} />

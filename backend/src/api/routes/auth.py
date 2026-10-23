@@ -16,7 +16,7 @@ router = APIRouter(tags=["Autenticación"])
 async def register_user(
     user_data: UserCreate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_admin)  # Solo admin puede crear usuarios
+    current_user: Usuario = Depends(require_admin)
 ):
     """
     Registra un nuevo usuario (Solo administradores)
@@ -129,7 +129,6 @@ async def update_profile(
     nombre = profile_data.get("nombre", "").strip()
     apellido = profile_data.get("apellido", "").strip()
 
-    # Actualizar usuario
     current_user.nombre = nombre if nombre else None
     current_user.apellido = apellido if apellido else None
 

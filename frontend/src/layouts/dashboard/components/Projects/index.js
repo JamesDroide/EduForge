@@ -1,34 +1,11 @@
-/**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-
-// @mui material components
 import Card from "@mui/material/Card";
 import Icon from "@mui/material/Icon";
-
-// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
-
-// API configuration
 import { API_BASE_URL } from "config/api";
-
-// Imagen por defecto para estudiantes
 import defaultStudentImage from "assets/images/Estudiante.jpg";
 
 function Projects() {
@@ -36,7 +13,6 @@ function Projects() {
   const [studentsAtRisk, setStudentsAtRisk] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Función para verificar si hay datos de CSV válidos
   const hasValidCsvData = () => {
     try {
       const storedPredictions = localStorage.getItem("latest_predictions");
@@ -51,14 +27,12 @@ function Projects() {
     }
   };
 
-  // Función para obtener estudiantes en riesgo del backend
   const fetchStudentsAtRisk = useCallback(async () => {
     try {
       setLoading(true);
 
-      // Solo cargar datos si hay un CSV válido
       if (!hasValidCsvData()) {
-        console.log("📭 No hay CSV cargado, no se mostrarán estudiantes en alto riesgo");
+        console.log("No hay CSV cargado, no se mostrarán estudiantes en alto riesgo");
         setStudentsAtRisk([]);
         setLoading(false);
         return;
@@ -71,7 +45,6 @@ function Projects() {
       }
 
       const data = await response.json();
-      // Filtrar solo estudiantes con riesgo "Alto"
       const highRiskStudents = data.filter((student) => student.risk_level === "Alto");
       setStudentsAtRisk(highRiskStudents);
     } catch (err) {
@@ -85,22 +58,19 @@ function Projects() {
   useEffect(() => {
     fetchStudentsAtRisk();
 
-    // Función para escuchar cuando se sube un nuevo CSV
     const handleCsvUploaded = () => {
-      console.log("🔄 CSV cargado, actualizando estudiantes riesgo alto...");
+      console.log("CSV cargado, actualizando estudiantes riesgo alto...");
       setTimeout(() => {
         fetchStudentsAtRisk();
       }, 1000);
     };
 
-    // Funcion para escuchar cambios en localStorage
     const handleStorageChange = (e) => {
       if (e.key === "csv_uploaded" && e.newValue) {
         fetchStudentsAtRisk();
       }
     };
 
-    // Escuchar eventos de CSV cargado
     window.addEventListener("csvUploaded", handleCsvUploaded);
     window.addEventListener("storage", handleStorageChange);
 
@@ -110,16 +80,13 @@ function Projects() {
     };
   }, [fetchStudentsAtRisk]);
 
-  // Función para manejar el clic en un estudiante
   const handleStudentClick = (student) => {
-    // Buscar los datos completos del estudiante desde localStorage
     let completeStudentData = student;
 
     try {
       const storedPredictions = localStorage.getItem("latest_predictions");
       if (storedPredictions) {
         const parsedData = JSON.parse(storedPredictions);
-        // Buscar el estudiante específico en los datos completos
         const fullStudentData = parsedData.find(
           (p) =>
             (p.id_estudiante && p.id_estudiante.toString() === student.student_id.toString()) ||
@@ -128,7 +95,7 @@ function Projects() {
         );
 
         if (fullStudentData) {
-          console.log("✅ Datos completos encontrados:", fullStudentData);
+          console.log("Datos completos encontrados:", fullStudentData);
           completeStudentData = {
             student_id:
               fullStudentData.id_estudiante || fullStudentData.student_id || student.student_id,
@@ -141,14 +108,13 @@ function Projects() {
             ...fullStudentData,
           };
         } else {
-          console.warn("⚠️ No se encontraron datos completos para:", student.name);
+          console.warn("No se encontraron datos completos para:", student.name);
         }
       }
     } catch (e) {
       console.error("Error buscando datos completos:", e);
     }
 
-    // Formatear los datos del estudiante para el análisis individual
     const formattedStudent = {
       student_id: completeStudentData.student_id || student.student_id,
       name: completeStudentData.name || student.name,
@@ -159,9 +125,8 @@ function Projects() {
       ...completeStudentData,
     };
 
-    console.log("📊 Datos formateados para enviar:", formattedStudent);
+    console.log("Datos formateados para enviar:", formattedStudent);
 
-    // Navegar al análisis individual (sin guardar en localStorage)
     navigate("/individual", {
       state: {
         preselectedStudent: formattedStudent,

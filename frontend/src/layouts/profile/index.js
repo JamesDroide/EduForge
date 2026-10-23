@@ -1,34 +1,18 @@
-/**
-=========================================================
-* Material Dashboard 2 React - Profile Page
-=========================================================
-*/
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
-// @mui material components
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
-
-// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import MDAlert from "components/MDAlert";
-
-// Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
-
-// Auth Context
 import { useAuth } from "context/AuthContext";
 import { API_ENDPOINTS } from "config/api";
 import api from "config/api";
-
-// Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
 function Profile() {
@@ -37,18 +21,15 @@ function Profile() {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
 
-  // Verificar si el usuario puede cambiar su contraseña
-  // Los docentes y administradores NO pueden cambiar su contraseña desde aquí
+  // Docentes y administradores tienen el cambio de clave restringido al panel administrativo
   const canChangePassword = user?.rol !== "docente" && user?.rol !== "administrador";
 
-  // Estados para información personal
   const [nombre, setNombre] = useState("");
   const [apellido, setApellido] = useState("");
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState("");
   const [profileError, setProfileError] = useState("");
 
-  // Estados para cambio de contraseña
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -56,7 +37,6 @@ function Profile() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  // Cargar datos del usuario al montar
   useEffect(() => {
     if (user) {
       setNombre(user.nombre || "");
@@ -78,7 +58,6 @@ function Profile() {
 
       if (response.data) {
         setProfileSuccess("Perfil actualizado exitosamente");
-        // Actualizar el contexto de usuario
         if (updateUser) {
           updateUser({ ...user, nombre, apellido });
         }
@@ -96,7 +75,6 @@ function Profile() {
     setSuccess("");
     setLoading(true);
 
-    // Validaciones
     if (!oldPassword || !newPassword || !confirmPassword) {
       setError("Por favor, completa todos los campos");
       setLoading(false);
@@ -155,7 +133,6 @@ function Profile() {
       <MDBox mb={2} />
       <MDBox mt={4} mb={3}>
         <Grid container spacing={3}>
-          {/* Información del Usuario */}
           <Grid item xs={12} md={canChangePassword ? 6 : 12}>
             <Card
               sx={{
@@ -190,7 +167,6 @@ function Profile() {
                   </MDAlert>
                 )}
                 <MDBox component="form" role="form" onSubmit={handleUpdateProfile}>
-                  {/* Campos editables de nombre y apellido */}
                   <MDBox mb={2}>
                     <MDTypography
                       variant="caption"
@@ -235,7 +211,6 @@ function Profile() {
                     </MDButton>
                   </MDBox>
 
-                  {/* Campos de solo lectura */}
                   <MDBox mb={2}>
                     <MDTypography
                       variant="caption"
@@ -354,7 +329,6 @@ function Profile() {
             </Card>
           </Grid>
 
-          {/* Cambio de Contraseña - Solo para usuarios que no sean docentes ni administradores */}
           {canChangePassword && (
             <Grid item xs={12} md={6}>
               <Card

@@ -2,8 +2,7 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Date
 from config import Base
 import datetime
 
-# IMPORTANTE: Importar TODOS los modelos ANTES de usar Base.metadata
-# Esto asegura que SQLAlchemy conozca todas las tablas
+# Registrar todos los modelos en Base.metadata al importar el paquete models
 from models.user import Usuario, RolEnum
 from models.upload_history import UploadHistory, UploadPrediction
 
@@ -27,11 +26,11 @@ class ResultadoPrediccion(Base):
 class StudentData(Base):
     __tablename__ = 'student_data'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    id_estudiante = Column('estudiante_id', Integer, nullable=False)  # Mapear id_estudiante a estudiante_id en BD
+    id_estudiante = Column('estudiante_id', Integer, nullable=False)  # Mapeo explícito a la columna 'estudiante_id' de la BD
     nombre = Column(String, nullable=False)
-    nota_final = Column(Float, nullable=False)  # Agregado
+    nota_final = Column(Float, nullable=False)
     conducta = Column(String, nullable=True)
     asistencia = Column(Float, nullable=False)
     inasistencia = Column(Float, nullable=False)
-    fecha = Column(Date, nullable=True)  # Agregar fecha para compatibilidad con producción
-    created_at = Column(DateTime, default=datetime.datetime.utcnow)  # Agregado
+    fecha = Column(Date, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

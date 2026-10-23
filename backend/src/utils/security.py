@@ -6,10 +6,8 @@ from fastapi import HTTPException, status
 import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
 load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env")))
 
-# Configuración de seguridad
 SECRET_KEY = os.getenv("SECRET_KEY", "eduforge_super_secret_key_change_in_production_2024")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
@@ -26,14 +24,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         bool: True si coinciden, False si no
     """
     try:
-        # Convertir a bytes
         password_bytes = plain_password.encode('utf-8')
         hash_bytes = hashed_password.encode('utf-8')
-
-        # Verificar con bcrypt directamente
         return bcrypt.checkpw(password_bytes, hash_bytes)
     except Exception as e:
-        print(f"Error verificando contraseña: {str(e)}")
+        print(f"Error verificando contrasena: {str(e)}")
         return False
 
 def get_password_hash(password: str) -> str:
@@ -47,14 +42,9 @@ def get_password_hash(password: str) -> str:
         str: Hash de la contraseña
     """
     try:
-        # Convertir a bytes
         password_bytes = password.encode('utf-8')
-
-        # Generar salt y hashear
         salt = bcrypt.gensalt(rounds=12)
         hashed = bcrypt.hashpw(password_bytes, salt)
-
-        # Retornar como string
         return hashed.decode('utf-8')
     except Exception as e:
         print(f"Error generando hash: {str(e)}")

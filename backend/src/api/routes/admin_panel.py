@@ -16,8 +16,6 @@ import os
 
 router = APIRouter(prefix="/admin", tags=["admin-panel"])
 
-# Código de acceso especial para el panel de administración
-# En producción, esto debería estar en una variable de entorno
 ADMIN_ACCESS_CODE = os.getenv("ADMIN_ACCESS_CODE", "EDUFORGE2025")
 
 class AdminLoginRequest(BaseModel):
@@ -40,14 +38,12 @@ async def admin_login(
     Login especial para el panel de administración
     Requiere username, password Y código de acceso especial
     """
-    # Verificar el código de acceso especial
     if login_data.access_code != ADMIN_ACCESS_CODE:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Código de acceso inválido"
         )
 
-    # Verificar las credenciales del usuario
     user = db.query(Usuario).filter(Usuario.username == login_data.username).first()
 
     if not user:
@@ -68,17 +64,15 @@ async def admin_login(
             detail="Usuario inactivo"
         )
 
-    # Verificar que el usuario sea administrador
     if user.rol != "administrador":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permisos para acceder al panel de administración"
         )
 
-    # Crear token de acceso
     access_token = create_access_token(
         data={"sub": user.username, "rol": user.rol.value if hasattr(user.rol, 'value') else user.rol},
-        expires_delta=timedelta(hours=12)  # Token más largo para el panel de admin
+        expires_delta=timedelta(hours=12)
     )
 
     return {
@@ -97,10 +91,8 @@ async def get_all_users_admin(
     Obtener lista de todos los usuarios desde el panel de administración
     EXCLUYE al usuario superadmin por seguridad
     """
-    # Obtener el username del superadmin desde variables de entorno
     SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
 
-    # Filtrar usuarios excluyendo al superadmin
     users = db.query(Usuario).filter(
         Usuario.username != SUPERADMIN_USERNAME
     ).all()
@@ -142,38 +134,33 @@ async def create_user_admin(
     logger = logging.getLogger(__name__)
 
     try:
-        # VERIFICACIÓN: Asegurar que la tabla usuarios existe
         inspector = inspect(db.bind)
         if 'usuarios' not in inspector.get_table_names():
-            logger.error(" CRÍTICO: La tabla 'usuarios' no existe en la base de datos")
+            logger.error("CRITICO: La tabla 'usuarios' no existe en la base de datos")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error de configuración: La tabla de usuarios no existe en la base de datos"
             )
 
-        logger.info(f" Iniciando creación de usuario: {user_data.username}")
-        logger.info(f" Conexión BD: {db.bind.url.database} en {db.bind.url.host}:{db.bind.url.port}")
+        logger.info(f"Iniciando creacion de usuario: {user_data.username}")
+        logger.info(f"Conexion BD: {db.bind.url.database} en {db.bind.url.host}:{db.bind.url.port}")
 
-        # Verificar si el usuario ya existe
         existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
         if existing_user:
-            logger.warning(f" Usuario ya existe: {user_data.username}")
+            logger.warning(f"Usuario ya existe: {user_data.username}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El nombre de usuario ya está en uso"
             )
 
-        # Verificar si el email ya existe
         existing_email = db.query(Usuario).filter(Usuario.email == user_data.email).first()
         if existing_email:
-            logger.warning(f" Email ya existe: {user_data.email}")
+            logger.warning(f"Email ya existe: {user_data.email}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="El correo electrónico ya está en uso"
             )
 
-        # Crear el nuevo usuario
-        logger.info(f" Creando objeto Usuario para: {user_data.username}")
         hashed_password = get_password_hash(user_data.password)
         new_user = Usuario(
             username=user_data.username,
@@ -183,92 +170,52 @@ async def create_user_admin(
             is_active=user_data.is_active
         )
 
-        logger.info(f" Agregando usuario a la sesión...")
         db.add(new_user)
-
-        logger.info(f" Ejecutando flush...")
         db.flush()
-        logger.info(f" Flush exitoso - Usuario tiene ID: {new_user.id}")
-
-        logger.info(f" Ejecutando commit...")
         db.commit()
-        logger.info(f" Commit exitoso")
 
-        # CRÍTICO PARA RAILWAY: Forzar que la conexión persista el cambio
-        logger.info(f" Forzando persist con execute...")
-        db.execute(text("SELECT 1"))  # Forzar que la conexión confirme
+        # En Railway con pooler, forzar sincronización de conexión antes de verificar en otra sesión
+        db.execute(text("SELECT 1"))
+        time.sleep(0.2)
 
-        logger.info(f" Esperando propagación en Railway (200ms)...")
-        time.sleep(0.2)  # Aumentar a 200ms
-
-        # VERIFICACIÓN CRÍTICA 1: Usar SQL directo en la MISMA sesión
-        logger.info(f" Verificación SQL directa en sesión actual...")
         result = db.execute(text("SELECT COUNT(*) FROM usuarios WHERE id = :id"), {"id": new_user.id})
         count = result.scalar()
-        logger.info(f" SQL en sesión actual: {count} registro(s)")
 
         if count == 0:
-            logger.error(f" CRÍTICO: COUNT es 0 en la misma sesión después del commit!")
-            # Intentar commit adicional
+            logger.error("CRITICO: COUNT es 0 en la misma sesion despues del commit")
             db.commit()
-            logger.info(f" Commit adicional ejecutado")
             time.sleep(0.1)
             result = db.execute(text("SELECT COUNT(*) FROM usuarios WHERE id = :id"), {"id": new_user.id})
             count = result.scalar()
-            logger.info(f" Verificación después de 2do commit: {count} registro(s)")
 
-        # VERIFICACIÓN CRÍTICA 2: Usar una nueva sesión INDEPENDIENTE
-        logger.info(f" Verificando persistencia con nueva sesión...")
-        from config import SessionLocal, engine
+        from config import SessionLocal
 
-        # Crear nueva sesión con el MISMO engine
         verify_db = SessionLocal()
         try:
-            # Verificación con ORM
             verification = verify_db.query(Usuario).filter(Usuario.id == new_user.id).first()
             if not verification:
-                logger.error(f" ERROR CRÍTICO: Usuario con ID {new_user.id} no encontrado en nueva sesión!")
-
-                # Verificar cuántos usuarios hay en total
+                logger.error(f"ERROR CRITICO: Usuario con ID {new_user.id} no encontrado en nueva sesion")
                 total = verify_db.execute(text("SELECT COUNT(*) FROM usuarios")).scalar()
-                logger.error(f"   Total de usuarios en BD: {total}")
-
-                # Listar últimos IDs
+                logger.error(f"  Total de usuarios en BD: {total}")
                 last_ids = verify_db.execute(text("SELECT id, username FROM usuarios ORDER BY id DESC LIMIT 5")).fetchall()
-                logger.error(f"   Últimos IDs en BD: {last_ids}")
-
+                logger.error(f"  Ultimos IDs en BD: {last_ids}")
                 raise Exception("El usuario no se guardó correctamente en la base de datos")
 
-            logger.info(f" Usuario verificado en BD con ID: {verification.id}, Username: {verification.username}")
-
-            # Verificación adicional con SQL directo en nueva sesión
-            result2 = verify_db.execute(text("SELECT COUNT(*) FROM usuarios WHERE id = :id"), {"id": new_user.id})
-            count2 = result2.scalar()
-            logger.info(f" Verificación SQL en nueva sesión: {count2} registros encontrados")
-
-            # Verificar que la BD es la correcta
-            db_name = verify_db.execute(text("SELECT current_database()")).scalar()
-            logger.info(f" Base de datos actual: {db_name}")
-
+            logger.info(f"Usuario verificado en BD con ID: {verification.id}, Username: {verification.username}")
         finally:
             verify_db.close()
 
-        logger.info(f" Refrescando objeto original...")
         db.refresh(new_user)
-        logger.info(f" Refresh exitoso")
-
-        logger.info(f" USUARIO CREADO EXITOSAMENTE: {new_user.username} (ID: {new_user.id})")
+        logger.info(f"USUARIO CREADO EXITOSAMENTE: {new_user.username} (ID: {new_user.id})")
 
         return new_user
 
     except HTTPException:
-        # Re-lanzar excepciones HTTP
-        logger.error(f" HTTPException al crear usuario")
+        logger.error("HTTPException al crear usuario")
         db.rollback()
         raise
     except Exception as e:
-        # Hacer rollback en caso de cualquier otro error
-        logger.error(f" ERROR CRÍTICO al crear usuario: {str(e)}", exc_info=True)
+        logger.error(f"ERROR CRITICO al crear usuario: {str(e)}", exc_info=True)
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -295,7 +242,6 @@ async def update_user_admin(
                 detail="Usuario no encontrado"
             )
 
-        # Verificar que no sea el superadmin
         SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
         if user.username == SUPERADMIN_USERNAME:
             raise HTTPException(
@@ -303,7 +249,6 @@ async def update_user_admin(
                 detail="No se puede modificar este usuario"
             )
 
-        # Verificar si el nuevo username ya está en uso (si se cambió)
         if user_data.username and user_data.username != user.username:
             existing_user = db.query(Usuario).filter(Usuario.username == user_data.username).first()
             if existing_user:
@@ -313,7 +258,6 @@ async def update_user_admin(
                 )
             user.username = user_data.username
 
-        # Verificar si el nuevo email ya está en uso (si se cambió)
         if user_data.email and user_data.email != user.email:
             existing_email = db.query(Usuario).filter(Usuario.email == user_data.email).first()
             if existing_email:
@@ -323,7 +267,6 @@ async def update_user_admin(
                 )
             user.email = user_data.email
 
-        # Actualizar otros campos
         if user_data.rol is not None:
             user.rol = user_data.rol
         if user_data.is_active is not None:
@@ -363,7 +306,6 @@ async def change_user_password_admin(
                 detail="Usuario no encontrado"
             )
 
-        # Actualizar la contraseña
         user.password_hash = get_password_hash(password_data.new_password)
         db.commit()
 
@@ -398,7 +340,6 @@ async def delete_user_admin(
                 detail="Usuario no encontrado"
             )
 
-        # Verificar que no sea el superadmin intentando eliminarse a sí mismo
         SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
         if user.username == SUPERADMIN_USERNAME:
             raise HTTPException(
@@ -406,7 +347,6 @@ async def delete_user_admin(
                 detail="No se puede eliminar el usuario superadmin del sistema. Este usuario es crítico para el funcionamiento del panel de administración."
             )
 
-        # El superadmin puede eliminar cualquier otro usuario (incluyendo 'admin')
         db.delete(user)
         db.commit()
 

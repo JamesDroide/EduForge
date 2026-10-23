@@ -26,7 +26,6 @@ class AuthService:
             HTTPException: Si el usuario ya existe
         """
         try:
-            # Verificar si el usuario o email ya existen
             existing_user = db.query(Usuario).filter(
                 (Usuario.username == user_data.username) |
                 (Usuario.email == user_data.email)
@@ -44,7 +43,6 @@ class AuthService:
                         detail="El email ya está registrado"
                     )
 
-            # Crear el nuevo usuario
             hashed_password = get_password_hash(user_data.password)
             db_user = Usuario(
                 email=user_data.email,
@@ -119,11 +117,9 @@ class AuthService:
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # Actualizar último login
         user.last_login = datetime.utcnow()
         db.commit()
 
-        # Crear token de acceso
         access_token = create_access_token(
             data={"sub": user.username, "rol": user.rol.value}
         )

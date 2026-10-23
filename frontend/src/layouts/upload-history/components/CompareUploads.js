@@ -88,7 +88,6 @@ function CompareUploads({ uploads }) {
         </MDBox>
       )}
 
-      {/* Barra de acciones con diseño mejorado */}
       <MDBox
         mb={3}
         p={3}
@@ -212,7 +211,6 @@ function CompareUploads({ uploads }) {
         </Grid>
       </MDBox>
 
-      {/* Lista de cargas con checkboxes más grandes y notorios */}
       <MDBox>
         {uploads.map((upload) => {
           const isSelected = selectedUploads.includes(upload.id);
@@ -373,7 +371,6 @@ function CompareUploads({ uploads }) {
         })}
       </MDBox>
 
-      {/* Dialog de Comparación */}
       <Dialog
         open={showComparison}
         onClose={() => setShowComparison(false)}
@@ -403,7 +400,6 @@ function CompareUploads({ uploads }) {
         <DialogContent>
           {comparisonData && (
             <>
-              {/* Tabla de Comparación */}
               <TableContainer component={Paper} sx={{ mt: 2, boxShadow: 3 }}>
                 <Table>
                   <TableHead>
@@ -426,7 +422,6 @@ function CompareUploads({ uploads }) {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {/* Total de Estudiantes */}
                     <TableRow>
                       <TableCell>
                         <MDBox display="flex" alignItems="center" gap={1}>
@@ -443,7 +438,6 @@ function CompareUploads({ uploads }) {
                       ))}
                     </TableRow>
 
-                    {/* Riesgo Alto */}
                     <TableRow sx={{ backgroundColor: "rgba(244, 67, 54, 0.05)" }}>
                       <TableCell>
                         <MDBox display="flex" alignItems="center" gap={1}>
@@ -463,7 +457,6 @@ function CompareUploads({ uploads }) {
                       ))}
                     </TableRow>
 
-                    {/* Riesgo Medio */}
                     <TableRow sx={{ backgroundColor: "rgba(255, 152, 0, 0.05)" }}>
                       <TableCell>
                         <MDBox display="flex" alignItems="center" gap={1}>
@@ -483,7 +476,6 @@ function CompareUploads({ uploads }) {
                       ))}
                     </TableRow>
 
-                    {/* Riesgo Bajo */}
                     <TableRow sx={{ backgroundColor: "rgba(76, 175, 80, 0.05)" }}>
                       <TableCell>
                         <MDBox display="flex" alignItems="center" gap={1}>
@@ -506,10 +498,9 @@ function CompareUploads({ uploads }) {
                 </Table>
               </TableContainer>
 
-              {/* Análisis Visual */}
               <MDBox mt={3}>
                 <MDTypography variant="h6" mb={2}>
-                  <Icon>bar_chart</Icon> Análisis Visual
+                  <Icon sx={{ verticalAlign: "middle", mr: 0.5 }}>bar_chart</Icon> Análisis Visual
                 </MDTypography>
                 <Grid container spacing={2}>
                   {comparisonData.uploads.map((upload) => {
@@ -581,7 +572,6 @@ function CompareUploads({ uploads }) {
                 </Grid>
               </MDBox>
 
-              {/* Resumen */}
               <MDBox
                 mt={3}
                 p={3}

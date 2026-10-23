@@ -9,7 +9,6 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Cargar usuario y token del localStorage al iniciar
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
@@ -21,7 +20,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Función para iniciar sesión
   const login = async (username, password) => {
     try {
       const response = await fetch(API_ENDPOINTS.LOGIN, {
@@ -39,7 +37,6 @@ export const AuthProvider = ({ children }) => {
 
       const data = await response.json();
 
-      // Guardar token y usuario
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
@@ -53,7 +50,6 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Función para cerrar sesión
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -61,17 +57,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  // Función para verificar si el usuario está autenticado
   const isAuthenticated = () => {
     return !!token && !!user;
   };
 
-  // Función para verificar si el usuario es administrador
   const isAdmin = () => {
     return user?.rol === "administrador";
   };
 
-  // Función para obtener el token
   const getToken = () => {
     return token;
   };
@@ -103,7 +96,6 @@ AuthProvider.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-// Hook personalizado para usar el contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

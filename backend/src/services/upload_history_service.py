@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_, or_
+from sqlalchemy import desc, or_
 from models.upload_history import UploadHistory, UploadPrediction
-from models.user import Usuario
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict
 import json
@@ -55,7 +54,6 @@ class UploadHistoryService:
             upload.medium_risk_count = medium_risk
             upload.low_risk_count = low_risk
 
-            # Calcular porcentajes
             if processed_students > 0:
                 upload.high_risk_percentage = (high_risk / processed_students) * 100
                 upload.medium_risk_percentage = (medium_risk / processed_students) * 100
@@ -118,17 +116,14 @@ class UploadHistoryService:
         """Obtener lista de todas las cargas con filtros"""
         query = db.query(UploadHistory)
 
-        # Filtrar por usuario si no es admin
         if not is_admin and user_id:
             query = query.filter(UploadHistory.user_id == user_id)
 
-        # Filtrar por rango de fechas
         if start_date:
             query = query.filter(UploadHistory.upload_date >= start_date)
         if end_date:
             query = query.filter(UploadHistory.upload_date <= end_date)
 
-        # Búsqueda por nombre de archivo
         if search_query:
             query = query.filter(
                 or_(
@@ -137,10 +132,7 @@ class UploadHistoryService:
                 )
             )
 
-        # Ordenar por fecha más reciente
         query = query.order_by(desc(UploadHistory.upload_date))
-
-        # Paginación
         uploads = query.offset(skip).limit(limit).all()
 
         return uploads
@@ -150,7 +142,6 @@ class UploadHistoryService:
         """Obtener una carga específica por ID"""
         query = db.query(UploadHistory).filter(UploadHistory.id == upload_id)
 
-        # Si no es admin, verificar que sea dueño de la carga
         if not is_admin and user_id:
             query = query.filter(UploadHistory.user_id == user_id)
 
@@ -175,7 +166,6 @@ class UploadHistoryService:
         """Eliminar una carga y todas sus predicciones"""
         query = db.query(UploadHistory).filter(UploadHistory.id == upload_id)
 
-        # Si no es admin, verificar que sea dueño
         if not is_admin and user_id:
             query = query.filter(UploadHistory.user_id == user_id)
 
@@ -218,7 +208,6 @@ class UploadHistoryService:
         total_medium_risk = sum(u.medium_risk_count for u in uploads)
         total_low_risk = sum(u.low_risk_count for u in uploads)
 
-        # Últimas 30 días
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
         recent_uploads = [u for u in uploads if u.upload_date >= thirty_days_ago]
 
@@ -254,4 +243,3 @@ class UploadHistoryService:
             })
 
         return {'uploads': comparison}
-

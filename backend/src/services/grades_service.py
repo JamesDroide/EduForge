@@ -1,11 +1,8 @@
-# src/services/grades_service.py
-
 import matplotlib.pyplot as plt
 from io import BytesIO
 import base64
-from sqlalchemy.orm import Session
 from src.config import SessionLocal
-from src.models import StudentData  # Corregido el import
+from src.models import StudentData
 
 
 class GradesService:
@@ -16,12 +13,11 @@ class GradesService:
         """
         db = SessionLocal()
         try:
-            student_data = db.query(StudentData).filter(StudentData.id_estudiante == student_id).all()  # Cambiado a id_estudiante
-            # Aquí obtienes las calificaciones, asistencia, conducta
-            grades = [data.nota_final for data in student_data]  # Cambiado a nota_final
+            student_data = db.query(StudentData).filter(StudentData.id_estudiante == student_id).all()
+            grades = [data.nota_final for data in student_data]
             attendance = [data.asistencia for data in student_data]
             behavior = [data.conducta for data in student_data]
-            months = [data.created_at.strftime("%b %Y") for data in student_data]  # Cambiado a created_at
+            months = [data.created_at.strftime("%b %Y") for data in student_data]
             return grades, attendance, behavior, months
         finally:
             db.close()
@@ -30,39 +26,30 @@ class GradesService:
         """
         Función para generar el gráfico de calificaciones acumuladas, asistencia y conducta
         """
-        # Obtener los datos desde la base de datos
         grades, attendance, behavior, months = self.get_grades_from_db(student_id)
 
-        # Dividimos las calificaciones en Aprobados (>=11) y Desaprobados (<11)
         approved = [grade for grade in grades if grade >= 11]
         failed = [grade for grade in grades if grade < 11]
 
         approved_months = [months[i] for i in range(len(grades)) if grades[i] >= 11]
         failed_months = [months[i] for i in range(len(grades)) if grades[i] < 11]
 
-        # Crear la figura para el gráfico
         plt.figure(figsize=(10, 6))
 
-        # Graficar las calificaciones aprobadas y desaprobadas
         plt.plot(approved_months, approved, label="Aprobados", color="green", marker="o")
         plt.plot(failed_months, failed, label="Desaprobados", color="red", marker="o")
-
-        # Graficar la asistencia
         plt.plot(months, attendance, label="Asistencia (%)", color="blue", linestyle="--")
 
-        # Graficar la conducta
         conduct_positive = [1 if cond == 'Buena' else 0 for cond in behavior]
         conduct_negative = [1 if cond == 'Mala' else 0 for cond in behavior]
         plt.scatter(months, conduct_positive, color="yellow", label="Buena Conducta", marker="x")
         plt.scatter(months, conduct_negative, color="orange", label="Mala Conducta", marker="x")
 
-        # Añadir título y etiquetas
         plt.title("Evolución de Calificaciones Acumuladas, Asistencia y Conducta")
         plt.xlabel("Meses")
         plt.ylabel("Valor")
         plt.legend()
 
-        # Convertir el gráfico a un formato de imagen base64
         img_io = BytesIO()
         plt.savefig(img_io, format='png')
         img_io.seek(0)

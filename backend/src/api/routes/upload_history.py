@@ -11,7 +11,6 @@ from models.user import Usuario, RolEnum
 router = APIRouter()
 
 
-# Schemas
 class UploadHistoryResponse(BaseModel):
     id: int
     filename: str
@@ -73,7 +72,6 @@ async def get_upload_history(
     """
     is_admin = current_user.rol == RolEnum.ADMINISTRADOR
 
-    # Convertir fechas si se proporcionan
     start_dt = datetime.fromisoformat(start_date) if start_date else None
     end_dt = datetime.fromisoformat(end_date) if end_date else None
 
@@ -128,7 +126,6 @@ async def get_upload_predictions(
     """
     is_admin = current_user.rol == RolEnum.ADMINISTRADOR
 
-    # Verificar que el usuario tenga acceso a esta carga
     upload = UploadHistoryService.get_upload_by_id(
         db=db,
         upload_id=upload_id,
@@ -290,7 +287,6 @@ async def export_predictions(
 
     is_admin = current_user.rol == RolEnum.ADMINISTRADOR
 
-    # Verificar acceso
     upload = UploadHistoryService.get_upload_by_id(
         db=db,
         upload_id=upload_id,
@@ -301,22 +297,18 @@ async def export_predictions(
     if not upload:
         raise HTTPException(status_code=404, detail="Carga no encontrada")
 
-    # Obtener predicciones
     predictions = UploadHistoryService.get_predictions_by_upload(
         db=db,
         upload_id=upload_id,
         limit=10000
     )
 
-    # Convertir a DataFrame
     data = [pred.to_dict() for pred in predictions]
     df = pd.DataFrame(data)
 
-    # Eliminar campos innecesarios
     if 'risk_factors' in df.columns:
         df = df.drop('risk_factors', axis=1)
 
-    # Exportar según formato
     if format == "excel":
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -328,7 +320,7 @@ async def export_predictions(
             media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             headers={'Content-Disposition': f'attachment; filename=predicciones_{upload_id}.xlsx'}
         )
-    else:  # CSV
+    else:
         output = io.StringIO()
         df.to_csv(output, index=False)
         output.seek(0)
@@ -338,4 +330,3 @@ async def export_predictions(
             media_type='text/csv',
             headers={'Content-Disposition': f'attachment; filename=predicciones_{upload_id}.csv'}
         )
-

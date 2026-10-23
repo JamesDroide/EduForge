@@ -5,11 +5,7 @@ import Notifications from "layouts/notifications";
 import SignIn from "layouts/authentication/sign-in";
 import Profile from "layouts/profile";
 import UploadHistory from "layouts/upload-history";
-
-// @mui icons
 import Icon from "@mui/material/Icon";
-
-// Componente para proteger rutas
 import PrivateRoute from "components/PrivateRoute";
 
 const routes = [

@@ -4,31 +4,27 @@ Script de migración para crear las tablas del historial de cargas
 import sys
 import os
 
-# Agregar el directorio src al path para poder importar los módulos
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from sqlalchemy import create_engine, text
-from config import DATABASE_URL, SessionLocal
+from sqlalchemy import text
+from config import SessionLocal, Base, engine
 from models.upload_history import UploadHistory, UploadPrediction
 from models.user import Usuario
-from config import Base, engine
 
 def migrate_upload_history_tables():
     """Crear las tablas de historial de cargas"""
-    print(" Iniciando migración de tablas de historial...")
+    print("Iniciando migracion de tablas de historial...")
 
     try:
-        # Crear las tablas
         Base.metadata.create_all(bind=engine, tables=[
             UploadHistory.__table__,
             UploadPrediction.__table__
         ])
 
-        print(" Tablas de historial creadas exitosamente:")
-        print("   - upload_history")
-        print("   - upload_predictions")
+        print("Tablas de historial creadas exitosamente:")
+        print("  - upload_history")
+        print("  - upload_predictions")
 
-        # Verificar que las tablas existen
         db = SessionLocal()
         result = db.execute(text("""
             SELECT table_name 
@@ -38,25 +34,24 @@ def migrate_upload_history_tables():
         """))
 
         tables = [row[0] for row in result]
-        print(f"\n Tablas verificadas: {tables}")
+        print(f"\nTablas verificadas: {tables}")
 
         db.close()
 
         return True
 
     except Exception as e:
-        print(f" Error en la migración: {str(e)}")
+        print(f"Error en la migracion: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
 
 def add_user_name_fields():
     """Agregar campos nombre y apellido a la tabla usuarios si no existen"""
-    print("\n Agregando campos nombre y apellido a usuarios...")
+    print("\nAgregando campos nombre y apellido a usuarios...")
 
     db = SessionLocal()
     try:
-        # Verificar si las columnas ya existen
         result = db.execute(text("""
             SELECT column_name 
             FROM information_schema.columns 
@@ -68,21 +63,21 @@ def add_user_name_fields():
 
         if 'nombre' not in existing_columns:
             db.execute(text("ALTER TABLE usuarios ADD COLUMN nombre VARCHAR(100)"))
-            print(" Campo 'nombre' agregado")
+            print("Campo 'nombre' agregado")
         else:
-            print("  Campo 'nombre' ya existe")
+            print("Campo 'nombre' ya existe")
 
         if 'apellido' not in existing_columns:
             db.execute(text("ALTER TABLE usuarios ADD COLUMN apellido VARCHAR(100)"))
-            print(" Campo 'apellido' agregado")
+            print("Campo 'apellido' agregado")
         else:
-            print("  Campo 'apellido' ya existe")
+            print("Campo 'apellido' ya existe")
 
         db.commit()
         return True
 
     except Exception as e:
-        print(f" Error agregando campos: {str(e)}")
+        print(f"Error agregando campos: {str(e)}")
         import traceback
         traceback.print_exc()
         db.rollback()
@@ -91,24 +86,17 @@ def add_user_name_fields():
         db.close()
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("MIGRACIÓN: Sistema de Historial de Cargas CSV")
-    print("=" * 60)
+    print("MIGRACION: Sistema de Historial de Cargas CSV")
 
-    # Ejecutar migraciones
     success1 = add_user_name_fields()
     success2 = migrate_upload_history_tables()
 
     if success1 and success2:
-        print("\n" + "=" * 60)
-        print(" ¡MIGRACIÓN COMPLETADA EXITOSAMENTE!")
-        print("=" * 60)
-        print("\nAhora puedes:")
+        print("\nMIGRACION COMPLETADA EXITOSAMENTE")
+        print("Ahora puedes:")
         print("1. Reiniciar el servidor backend")
-        print("2. Subir un CSV y las cargas se guardarán en el historial")
+        print("2. Subir un CSV y las cargas se guardaran en el historial")
         print("3. Acceder a /historial en el frontend para ver el historial")
     else:
-        print("\n" + "=" * 60)
-        print("  MIGRACIÓN COMPLETADA CON ERRORES")
-        print("=" * 60)
+        print("\nMIGRACION COMPLETADA CON ERRORES")
         print("Revisa los mensajes de error anteriores")

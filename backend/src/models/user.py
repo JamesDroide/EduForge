@@ -25,7 +25,6 @@ class Usuario(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     last_login = Column(DateTime(timezone=True), nullable=True)
 
-    # Relaciones
     upload_history = relationship("UploadHistory", back_populates="user")
 
     def __repr__(self):
