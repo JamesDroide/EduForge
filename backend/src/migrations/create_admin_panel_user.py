@@ -35,7 +35,7 @@ def create_or_update_admin_panel_user():
 
     # Validar que las variables de entorno estén configuradas
     if not all([SUPERADMIN_USERNAME, SUPERADMIN_PASSWORD, SUPERADMIN_EMAIL]):
-        print("❌ ERROR: Variables de entorno no configuradas")
+        print(" ERROR: Variables de entorno no configuradas")
         print("   Por favor configura en el archivo .env:")
         print("   - SUPERADMIN_USERNAME")
         print("   - SUPERADMIN_PASSWORD")
@@ -53,13 +53,13 @@ def create_or_update_admin_panel_user():
         ).first()
 
         if admin_panel_user:
-            print(f"👤 Usuario '{SUPERADMIN_USERNAME}' encontrado - Actualizando credenciales...")
+            print(f" Usuario '{SUPERADMIN_USERNAME}' encontrado - Actualizando credenciales...")
 
             # Verificar si la contraseña actual es correcta
             if verify_password(SUPERADMIN_PASSWORD, admin_panel_user.password_hash):
-                print("✅ La contraseña ya es correcta")
+                print(" La contraseña ya es correcta")
             else:
-                print("🔄 Actualizando contraseña")
+                print(" Actualizando contraseña")
                 admin_panel_user.password_hash = get_password_hash(SUPERADMIN_PASSWORD)
 
             # Asegurar que tiene rol de administrador
@@ -70,9 +70,9 @@ def create_or_update_admin_panel_user():
             db.commit()
             db.refresh(admin_panel_user)
 
-            print("✅ Usuario del panel de administración actualizado")
+            print(" Usuario del panel de administración actualizado")
         else:
-            print(f"➕ Creando usuario '{SUPERADMIN_USERNAME}' para el panel de gestión...")
+            print(f" Creando usuario '{SUPERADMIN_USERNAME}' para el panel de gestión...")
 
             # Crear el usuario específico del panel de administración
             admin_panel_user = Usuario(
@@ -87,17 +87,17 @@ def create_or_update_admin_panel_user():
             db.commit()
             db.refresh(admin_panel_user)
 
-            print("✅ Usuario del panel de administración creado exitosamente")
+            print(" Usuario del panel de administración creado exitosamente")
 
         print("\n" + "="*60)
-        print("📋 CONFIGURACIÓN DEL PANEL DE ADMINISTRACIÓN")
+        print(" CONFIGURACIÓN DEL PANEL DE ADMINISTRACIÓN")
         print("="*60)
         print(f"   Username:       {SUPERADMIN_USERNAME}")
         print(f"   Email:          {SUPERADMIN_EMAIL}")
         print(f"   ID:             {admin_panel_user.id}")
         print(f"   Rol:            {admin_panel_user.rol}")
         print("="*60)
-        print("\n⚠️  IMPORTANTE:")
+        print("\n  IMPORTANTE:")
         print("   - Las credenciales se gestionan mediante variables de entorno")
         print("   - Este usuario es INDEPENDIENTE del usuario 'admin' del sistema")
         print("   - NUNCA compartas las credenciales del superadmin")
@@ -105,7 +105,7 @@ def create_or_update_admin_panel_user():
 
     except Exception as e:
         db.rollback()
-        print(f"❌ Error al crear/actualizar usuario del panel: {e}")
+        print(f" Error al crear/actualizar usuario del panel: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

@@ -136,7 +136,7 @@ async def get_attendance_chart_real():
     df = attendance_service.get_attendance_data_from_csv()
 
     if df is None or df.empty:
-        print("⚠️ No hay datos del CSV disponibles")
+        print(" No hay datos del CSV disponibles")
         return {
             "labels": ["Lun", "Mar", "Mié", "Jue", "Vie"],
             "datasets": [{
@@ -146,9 +146,9 @@ async def get_attendance_chart_real():
             }]
         }
 
-    print(f"✅ Datos del CSV encontrados: {len(df)} registros")
-    print(f"📅 Fechas disponibles: {df['fecha'].unique()[:5]}...")
-    print(f"🗓️ Días de semana encontrados: {df['dia_semana'].unique()}")
+    print(f" Datos del CSV encontrados: {len(df)} registros")
+    print(f" Fechas disponibles: {df['fecha'].unique()[:5]}...")
+    print(f" Días de semana encontrados: {df['dia_semana'].unique()}")
 
     # Obtener días de semana únicos que realmente están en el CSV
     dias_encontrados = df['dia_semana'].unique()
@@ -161,7 +161,7 @@ async def get_attendance_chart_real():
 
     # Si solo hay domingos, cambiar la estrategia del gráfico
     if len(dias_encontrados) == 1 and 'Sunday' in dias_encontrados:
-        print("📊 Detectado: Solo domingos en el CSV. Cambiando a vista por fechas...")
+        print(" Detectado: Solo domingos en el CSV. Cambiando a vista por fechas...")
 
         # Agrupar por fechas específicas en lugar de días de semana
         meses_unicos = sorted(df['año_mes'].unique())
@@ -201,7 +201,7 @@ async def get_attendance_chart_real():
                 "borderWidth": 2
             })
 
-            print(f"✅ Dataset creado para {etiqueta_mes}: {datos_mes}")
+            print(f" Dataset creado para {etiqueta_mes}: {datos_mes}")
 
         return {
             "labels": fechas_unicas,  # Fechas como etiquetas
@@ -214,13 +214,13 @@ async def get_attendance_chart_real():
         etiquetas_dias = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
         meses_unicos = sorted(df['año_mes'].unique())
 
-        print(f"📊 Meses encontrados: {meses_unicos}")
+        print(f" Meses encontrados: {meses_unicos}")
 
         colors = ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40", "#4CAF50", "#FF9F9F"]
         datasets = []
 
         for idx, mes in enumerate(meses_unicos):
-            print(f"🔄 Procesando mes: {mes}")
+            print(f" Procesando mes: {mes}")
             datos_mes = []
 
             for i, dia in enumerate(dias_semana):
@@ -228,7 +228,7 @@ async def get_attendance_chart_real():
 
                 if not datos_filtrados.empty:
                     asistencia_promedio = round(datos_filtrados['asistencia'].mean(), 1)
-                    print(f"  📈 {dia} ({etiquetas_dias[i]}): {asistencia_promedio}% asistencia ({len(datos_filtrados)} registros)")
+                    print(f"   {dia} ({etiquetas_dias[i]}): {asistencia_promedio}% asistencia ({len(datos_filtrados)} registros)")
                 else:
                     asistencia_promedio = 0
 
@@ -246,7 +246,7 @@ async def get_attendance_chart_real():
                 "borderWidth": 2
             })
 
-            print(f"✅ Dataset creado para {etiqueta_mes}: {datos_mes}")
+            print(f" Dataset creado para {etiqueta_mes}: {datos_mes}")
 
         return {
             "labels": etiquetas_dias,  # Todos los días de la semana

@@ -1,4 +1,41 @@
-
-
-
-
+estudiante_id,nombre,fecha,nota_final,asistencia,inasistencia,conducta
+1,Ana Sofia Martinez,2025-03-03,18.5,95,5,positivo
+2,Carlos Eduardo Ramirez,2025-03-03,8.0,62,38,agresivo
+3,Maria Isabel Torres,2025-03-04,13.0,82,18,neutral
+4,Diego Fernando Castro,2025-03-04,16.0,90,10,positivo
+5,Lucia Valentina Herrera,2025-03-05,9.5,68,32,agresivo
+6,Sebastian Jose Morales,2025-03-05,11.5,76,24,neutral
+7,Camila Andrea Flores,2025-03-06,19.0,98,2,positivo
+8,Alejandro David Vargas,2025-03-06,6.5,55,45,agresivo
+9,Valentina Rodriguez,2025-03-07,14.5,85,15,positivo
+10,Mateo Nicolas Herrera,2025-03-07,10.0,70,30,neutral
+11,Sofia Elena Castro,2025-03-10,17.0,92,8,positivo
+12,Santiago Miguel Torres,2025-03-10,7.5,60,40,agresivo
+13,Isabella Carmen Lopez,2025-03-11,12.5,80,20,neutral
+14,Andres Felipe Rodriguez,2025-03-11,15.5,88,12,positivo
+15,Daniela Alejandra Morales,2025-03-12,9.0,65,35,agresivo
+16,Gabriel Esteban Martinez,2025-03-12,11.0,74,26,neutral
+17,Fernanda Gabriela Ruiz,2025-03-13,18.0,94,6,positivo
+18,Daniel Antonio Lopez,2025-03-13,5.0,50,50,agresivo
+19,Alejandra Patricia Silva,2025-03-14,14.0,84,16,positivo
+20,Nicolas Emilio Silva,2025-03-14,10.5,72,28,neutral
+21,Carolina Beatriz Mendoza,2025-03-17,16.5,91,9,positivo
+22,Rafael Ignacio Mendoza,2025-03-17,8.5,64,36,agresivo
+23,Natalia Andrea Vargas,2025-03-18,13.5,83,17,neutral
+24,Joaquin Maximiliano Ruiz,2025-03-18,15.0,87,13,positivo
+25,Paola Cristina Jimenez,2025-03-19,7.0,58,42,agresivo
+26,Vicente Agustin Jimenez,2025-03-19,12.0,78,22,neutral
+27,Andrea Francisca Rivera,2025-03-20,19.5,99,1,positivo
+28,Emilio Tomas Gonzalez,2025-03-20,6.0,52,48,agresivo
+29,Gabriela Monserrat Gonzalez,2025-03-21,14.0,86,14,positivo
+30,Benjamin Eduardo Rivera,2025-03-21,10.0,71,29,neutral
+31,Valeria Antonella Paredes,2025-03-24,17.5,93,7,positivo
+32,Lucas Matias Salazar,2025-03-24,8.0,61,39,agresivo
+33,Renata Ximena Chavez,2025-03-25,13.0,81,19,neutral
+34,Tomas Alejandro Espinoza,2025-03-25,16.0,89,11,positivo
+35,Mariana Victoria Quispe,2025-03-26,9.5,67,33,agresivo
+36,Samuel David Rojas,2025-03-26,11.5,75,25,neutral
+37,Antonella Mia Delgado,2025-03-27,20.0,100,0,positivo
+38,Adriano Nicolas Vega,2025-03-27,4.5,48,52,agresivo
+39,Julieta Romina Aguilar,2025-03-28,15.0,88,12,positivo
+40,Leonardo Gael Navarro,2025-03-28,10.5,73,27,neutral

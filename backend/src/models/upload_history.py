@@ -71,7 +71,7 @@ class UploadPrediction(Base):
     __tablename__ = 'upload_predictions'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    upload_history_id = Column(Integer, ForeignKey('upload_history.id'), nullable=False)
+    upload_history_id = Column(Integer, ForeignKey('upload_history.id', ondelete='CASCADE'), nullable=False)
 
     # Datos del estudiante
     estudiante_id = Column(Integer, nullable=False)

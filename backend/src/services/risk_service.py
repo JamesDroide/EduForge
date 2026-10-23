@@ -11,7 +11,7 @@ def clear_latest_predictions():
     """Limpia la variable global de predicciones"""
     global latest_predictions
     latest_predictions = []
-    print("🧹 Variable global latest_predictions limpiada")
+    print(" Variable global latest_predictions limpiada")
 
 class RiskService:
 
@@ -24,10 +24,10 @@ class RiskService:
         """
         global latest_predictions
 
-        # ✅ CORRECCIÓN: Si no hay datos en la variable global, NO mostrar datos de BD
+        #  CORRECCIÓN: Si no hay datos en la variable global, NO mostrar datos de BD
         # Esto evita que muestre datos viejos al iniciar la app sin haber cargado CSV
         if not latest_predictions or len(latest_predictions) == 0:
-            print("📭 No hay predicciones cargadas en esta sesión")
+            print(" No hay predicciones cargadas en esta sesión")
             return []
 
         db = SessionLocal()
@@ -35,45 +35,48 @@ class RiskService:
             # Leer desde la base de datos
             results = db.query(ResultadoPrediccion).all()
 
-            print(f"🔍 DEBUG: get_students_at_risk - {len(results)} registros encontrados en BD")
+            print(f" DEBUG: get_students_at_risk - {len(results)} registros encontrados en BD")
 
             # Si no hay datos en BD, devolver lista vacía
             if not results:
-                print("📭 No hay datos en la base de datos")
+                print(" No hay datos en la base de datos")
                 return []
 
             all_students = []
 
             for result in results:
                 # Extraer los valores con manejo de None
-                nota_value = result.nota_final  # Solo leer nota_final
+                nota_value = result.nota_final if result.nota_final is not None else 0.0  # Solo leer nota_final
                 asistencia_value = result.asistencia if result.asistencia is not None else 0
                 conducta_value = result.conducta if result.conducta is not None else "Regular"
+                risk_level = result.riesgo_desercion if result.riesgo_desercion else "Bajo"
 
-                print(f"🔍 DEBUG: Procesando estudiante {result.nombre}: nota={nota_value}, asistencia={asistencia_value}, riesgo={result.riesgo_desercion}")
+                print(f" DEBUG: Procesando estudiante {result.nombre}: nota={nota_value}, asistencia={asistencia_value}, riesgo={result.riesgo_desercion}")
 
                 all_students.append({
                     "student_id": result.id_estudiante,
                     "name": result.nombre if result.nombre else f"Estudiante {result.id_estudiante}",
                     "grade": "Primaria" if result.id_estudiante < 1000 else "Secundaria",
-                    "risk_level": result.riesgo_desercion if result.riesgo_desercion else "Bajo",
+                    "risk_level": risk_level,
+                    "riesgo_desercion": risk_level,
                     "nota": float(nota_value),  # Mantener por compatibilidad
                     "nota_final": float(nota_value),
                     "asistencia": float(asistencia_value),
                     "conducta": conducta_value,
                     "inasistencia": float(result.inasistencia) if result.inasistencia else 0,
                     "probabilidad_desercion": float(result.probabilidad_desercion) if result.probabilidad_desercion else 0,
-                    "resultado_prediccion": result.resultado_prediccion
+                    "resultado_prediccion": result.resultado_prediccion,
+                    "tiempo_prediccion": float(result.tiempo_prediccion) if result.tiempo_prediccion is not None else None
                 })
 
-            print(f"🔍 DEBUG: Devolviendo {len(all_students)} estudiantes desde BD")
+            print(f" DEBUG: Devolviendo {len(all_students)} estudiantes desde BD")
             if len(all_students) > 0:
-                print(f"🔍 DEBUG: Primer estudiante: {all_students[0]}")
+                print(f" DEBUG: Primer estudiante: {all_students[0]}")
 
             return all_students
 
         except Exception as e:
-            print(f"❌ Error leyendo desde BD: {e}")
+            print(f" Error leyendo desde BD: {e}")
             return []
         finally:
             db.close()
@@ -151,13 +154,13 @@ def update_latest_predictions(predictions):
     """Actualiza la variable global con los últimos resultados de predicción"""
     global latest_predictions
 
-    print(f"🔍 DEBUG: update_latest_predictions llamado con {len(predictions)} predicciones")
+    print(f" DEBUG: update_latest_predictions llamado con {len(predictions)} predicciones")
     if len(predictions) > 0:
-        print(f"🔍 DEBUG: Primera predicción: {predictions[0]}")
+        print(f" DEBUG: Primera predicción: {predictions[0]}")
         # Verificar que las notas estén correctas
         primera = predictions[0]
-        print(f"🔍 DEBUG: Nota en primera predicción: {primera.get('nota_final', 'NO ENCONTRADA')}")
-        print(f"🔍 DEBUG: Asistencia en primera predicción: {primera.get('asistencia', 'NO ENCONTRADA')}")
+        print(f" DEBUG: Nota en primera predicción: {primera.get('nota_final', 'NO ENCONTRADA')}")
+        print(f" DEBUG: Asistencia en primera predicción: {primera.get('asistencia', 'NO ENCONTRADA')}")
 
     latest_predictions = predictions
-    print(f"🔍 DEBUG: Variable global actualizada. Ahora tiene {len(latest_predictions)} elementos")
+    print(f" DEBUG: Variable global actualizada. Ahora tiene {len(latest_predictions)} elementos")

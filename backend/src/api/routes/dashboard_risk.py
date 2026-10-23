@@ -3,15 +3,24 @@
 from fastapi import APIRouter, Depends
 from services.risk_service import RiskService
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 router = APIRouter()
 
 class StudentRisk(BaseModel):
     student_id: int
     name: str
-    grade: str  # Primary or Secondary
-    risk_level: str  # Indicator of risk (e.g., High, Medium, Low)
+    grade: str
+    risk_level: str
+    riesgo_desercion: Optional[str] = None
+    nota: Optional[float] = 0.0
+    nota_final: Optional[float] = 0.0
+    asistencia: Optional[float] = 0.0
+    inasistencia: Optional[float] = 0.0
+    conducta: Optional[str] = "Regular"
+    probabilidad_desercion: Optional[float] = 0.0
+    resultado_prediccion: Optional[str] = None
+    tiempo_prediccion: Optional[float] = None
 
 class RiskSummaryResponse(BaseModel):
     labels: List[str]

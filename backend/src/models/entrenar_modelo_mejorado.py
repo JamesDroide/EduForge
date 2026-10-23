@@ -222,7 +222,7 @@ def entrenar_modelo_mejorado():
     print(f"Modelo Mejorado:         {test_accuracy:.4f}")
     print(f"Mejora:                  {mejora:+.2f}%")
     
-    print("\n🎉 ¡MODELO MEJORADO ENTRENADO EXITOSAMENTE!")
+    print("\n ¡MODELO MEJORADO ENTRENADO EXITOSAMENTE!")
     print("El modelo está listo para hacer predicciones más precisas.")
     
     return modelo_mejorado, scaler
@@ -237,7 +237,7 @@ def evaluar_modelo_actual():
             model = joblib.load(model_path)
             scaler = joblib.load(scaler_path) if os.path.exists(scaler_path) else None
             
-            print("✅ Modelo mejorado cargado exitosamente")
+            print(" Modelo mejorado cargado exitosamente")
             print(f"Tipo de modelo: {type(model).__name__}")
             
             if hasattr(model, 'n_estimators'):
@@ -247,11 +247,11 @@ def evaluar_modelo_actual():
                 
             return True
         else:
-            print("❌ No se encontró modelo entrenado")
+            print(" No se encontró modelo entrenado")
             return False
             
     except Exception as e:
-        print(f"❌ Error al cargar modelo: {e}")
+        print(f" Error al cargar modelo: {e}")
         return False
 
 if __name__ == "__main__":

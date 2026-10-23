@@ -54,14 +54,10 @@ function IndividualAnalysis() {
       }, 1000);
     };
 
-    // Función para escuchar cambios en localStorage
+    // Funcion para escuchar cambios en localStorage
     const handleStorageChange = (e) => {
-      if (e.key === "csv_uploaded" || e.key === "latest_predictions") {
-        console.log("🔄 Nuevos datos detectados, actualizando estudiantes...");
+      if ((e.key === "csv_uploaded" && e.newValue) || e.key === "latest_predictions") {
         fetchStudents();
-        if (e.key === "csv_uploaded") {
-          localStorage.removeItem("csv_uploaded");
-        }
       }
     };
 

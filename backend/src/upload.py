@@ -3,6 +3,8 @@ from fastapi import UploadFile
 import pandas as pd
 from models import StudentData, ResultadoPrediccion
 from config import SessionLocal
+from services.risk_service import clear_latest_predictions
+from services.attendance_service import clear_latest_csv_data
 from datetime import datetime
 
 # Usar la misma ruta que en main.py para consistencia
@@ -46,48 +48,83 @@ def clear_previous_data():
         deleted_students = session.query(StudentData).delete()
 
         session.commit()
-        print(f"✅ Datos limpiados: {deleted_predictions} predicciones, {deleted_students} estudiantes")
+        clear_latest_predictions()
+        clear_latest_csv_data()
+        print(f" Datos limpiados: {deleted_predictions} predicciones, {deleted_students} estudiantes")
 
     except Exception as e:
         session.rollback()
-        print(f"❌ Error limpiando datos anteriores: {str(e)}")
+        print(f" Error limpiando datos anteriores: {str(e)}")
         raise e
     finally:
         session.close()
 
 async def save_uploaded_file(file: UploadFile):
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
+    safe_filename = os.path.basename(file.filename)
+    file_path = os.path.join(UPLOAD_DIR, safe_filename)
 
     with open(file_path, "wb") as f:
         content = await file.read()
         f.write(content)
 
-    # Procesar el CSV y guardar los datos en la base de datos
-    if file.filename.endswith('.csv'):
-        df = pd.read_csv(file_path)
+    # Procesar el archivo tabular y guardar los datos en la base de datos
+    if safe_filename.lower().endswith(('.csv', '.xlsx', '.xls')):
+        if safe_filename.lower().endswith(('.xlsx', '.xls')):
+            df = pd.read_excel(file_path)
+        else:
+            df = pd.read_csv(file_path)
+
+        df.columns = df.columns.str.strip().str.lower()
+
         session = SessionLocal()
-        for _, row in df.iterrows():
-            # Convertir fecha si es numérica
-            fecha_val = row.get('fecha', '2025-01-01')
-            if isinstance(fecha_val, (float, int)) or (isinstance(fecha_val, str) and fecha_val.replace('.', '', 1).isdigit()):
-                fecha_str = excel_date_to_str(fecha_val)
-            else:
-                fecha_str = str(fecha_val)
-            try:
-                fecha_dt = datetime.strptime(fecha_str, '%Y-%m-%d')
-            except Exception:
-                fecha_dt = datetime(2025, 1, 1)
-            student = StudentData(
-                id_estudiante=int(row.get('estudiante_id', row.get('id', 0))),  # Cambiado a id_estudiante
-                nombre=str(row.get('nombre', '')),
-                nota_final=float(row.get('nota_final', row.get('nota', 0))),  # Agregado nota_final
-                asistencia=float(row.get('asistencia', 0)),
-                inasistencia=float(row.get('inasistencia', 0)),
-                conducta=str(row.get('conducta', '')),
-                fecha=fecha_dt.date()  # Agregar fecha al modelo
-            )
-            session.add(student)
-        session.commit()
-        session.close()
+        try:
+            for _, row in df.iterrows():
+                fecha_val = row.get('fecha', '2025-01-01')
+                if pd.isna(fecha_val):
+                    fecha_dt = datetime(2025, 1, 1)
+                elif isinstance(fecha_val, datetime):
+                    fecha_dt = fecha_val
+                elif isinstance(fecha_val, (float, int)) or (isinstance(fecha_val, str) and fecha_val.replace('.', '', 1).isdigit()):
+                    fecha_str = excel_date_to_str(fecha_val)
+                    parsed_dt = pd.to_datetime(fecha_str, errors='coerce')
+                    fecha_dt = parsed_dt.to_pydatetime() if not pd.isna(parsed_dt) else datetime(2025, 1, 1)
+                else:
+                    fecha_str = str(fecha_val).strip()
+                    parsed_dt = pd.to_datetime(fecha_str, format='%Y-%m-%d', errors='coerce')
+                    if pd.isna(parsed_dt):
+                        parsed_dt = pd.to_datetime(fecha_str, dayfirst=True, errors='coerce')
+                    fecha_dt = parsed_dt.to_pydatetime() if not pd.isna(parsed_dt) else datetime(2025, 1, 1)
+
+                est_id_raw = row.get('estudiante_id', row.get('id', 0))
+                id_estudiante = 0 if pd.isna(est_id_raw) else int(float(est_id_raw))
+
+                nombre_raw = row.get('nombre', '')
+                nombre = '' if pd.isna(nombre_raw) else str(nombre_raw).strip()
+
+                nota_raw = row.get('nota_final', row.get('nota', 0))
+                nota_final = 0.0 if pd.isna(nota_raw) else float(nota_raw)
+
+                asistencia_raw = row.get('asistencia', 0)
+                asistencia = 0.0 if pd.isna(asistencia_raw) else float(asistencia_raw)
+
+                inasistencia_raw = row.get('inasistencia', 0)
+                inasistencia = 0.0 if pd.isna(inasistencia_raw) else float(inasistencia_raw)
+
+                conducta_raw = row.get('conducta', 'Regular')
+                conducta = 'Regular' if pd.isna(conducta_raw) or not str(conducta_raw).strip() else str(conducta_raw).strip()
+
+                student = StudentData(
+                    id_estudiante=id_estudiante,
+                    nombre=nombre,
+                    nota_final=nota_final,
+                    asistencia=asistencia,
+                    inasistencia=inasistencia,
+                    conducta=conducta,
+                    fecha=fecha_dt.date()
+                )
+                session.add(student)
+            session.commit()
+        finally:
+            session.close()
 
     return file_path

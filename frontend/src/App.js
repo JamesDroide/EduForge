@@ -61,6 +61,7 @@ import UserManagement from "layouts/user-management";
 
 // Auth Provider
 import { AuthProvider } from "context/AuthContext";
+import PrivateRoute from "components/PrivateRoute";
 
 export default function App() {
   const [controller, dispatch] = useMaterialUIController();
@@ -185,8 +186,22 @@ export default function App() {
           {layout === "vr" && <Configurator />}
           <Routes>
             {getRoutes}
-            <Route path="/upload-data" element={<UploadData />} />
-            <Route path="/billing" element={<Billing />} />
+            <Route
+              path="/upload-data"
+              element={
+                <PrivateRoute>
+                  <UploadData />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/billing"
+              element={
+                <PrivateRoute>
+                  <Billing />
+                </PrivateRoute>
+              }
+            />
             {/* Panel de Administración Independiente - URLs especiales */}
             <Route path="/admin-panel/login" element={<AdminLogin />} />
             <Route path="/admin-panel/usuarios" element={<UserManagement />} />
@@ -218,8 +233,22 @@ export default function App() {
         {layout === "vr" && <Configurator />}
         <Routes>
           {getRoutes}
-          <Route path="/upload-data" element={<UploadData />} />
-          <Route path="/billing" element={<Billing />} />
+          <Route
+            path="/upload-data"
+            element={
+              <PrivateRoute>
+                <UploadData />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/billing"
+            element={
+              <PrivateRoute>
+                <Billing />
+              </PrivateRoute>
+            }
+          />
           {/* Panel de Administración Independiente - URLs especiales */}
           <Route path="/admin-panel/login" element={<AdminLogin />} />
           <Route path="/admin-panel/usuarios" element={<UserManagement />} />

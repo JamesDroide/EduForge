@@ -24,11 +24,11 @@ try:
     model = joblib.load(MODEL_PATH)
     scaler = joblib.load(SCALER_PATH)
     config = joblib.load(CONFIG_PATH)
-    logger.info("✅ Modelo ajustado a datos reales cargado exitosamente")
-    logger.info(f"✅ Columnas esperadas: {config['expected_columns']}")
+    logger.info("Modelo ajustado a datos reales cargado exitosamente")
+    logger.info(f"Columnas esperadas: {config['expected_columns']}")
 
 except Exception as e:
-    logger.error(f"❌ Error al cargar el modelo: {str(e)}")
+    logger.error(f"Error al cargar el modelo: {str(e)}")
     raise
 
 def validate_input_data_real(df: pd.DataFrame) -> bool:
@@ -40,22 +40,42 @@ def validate_input_data_real(df: pd.DataFrame) -> bool:
     missing_critical = [col for col in critical_columns if col not in df.columns]
 
     if missing_critical:
-        logger.error(f"❌ Faltan columnas críticas: {missing_critical}")
-        logger.info(f"📋 Columnas disponibles: {df.columns.tolist()}")
+        logger.error(f"Faltan columnas criticas: {missing_critical}")
+        logger.info(f"Columnas disponibles: {df.columns.tolist()}")
         return False
 
     return True
 
-def prepare_features_real(df: pd.DataFrame) -> pd.DataFrame:
+def prepare_features_real(df: pd.DataFrame, model_config: Dict = None) -> pd.DataFrame:
     """Prepara las características exactamente como el modelo entrenado las espera"""
+    cfg = model_config if model_config is not None else config
     df_features = df.copy()
+
+    # Convertir columnas numericas e imputar valores faltantes antes de normalizar
+    df_features['nota_final'] = pd.to_numeric(df_features['nota_final'], errors='coerce').fillna(0.0)
+    df_features['inasistencia'] = pd.to_numeric(df_features['inasistencia'], errors='coerce').fillna(0.0)
+    df_features['asistencia'] = pd.to_numeric(df_features['asistencia'], errors='coerce').fillna(
+        100.0 - df_features['inasistencia']
+    )
 
     # 1. Normalizar nota_final a escala 0-1 (desde escala 0-20)
     df_features['nota_normalizada'] = df_features['nota_final'] / 20.0
 
-    # 2. Codificar conducta usando el mapeo del modelo
-    conducta_map = config['conducta_map']
-    df_features['conducta_encoded'] = df_features['conducta'].map(conducta_map).fillna(1)  # default neutral
+    # 2. Codificar conducta usando el mapeo del modelo y sinonimos del sistema
+    conducta_clean = df_features['conducta'].fillna('neutral').astype(str).str.strip().str.lower()
+    conducta_map = {
+        **cfg.get('conducta_map', {}),
+        'positivo': 0,
+        'buena': 0,
+        'bueno': 0,
+        'neutral': 1,
+        'regular': 1,
+        'agresivo': 2,
+        'mala': 2,
+        'malo': 2,
+        'deficiente': 2,
+    }
+    df_features['conducta_encoded'] = conducta_clean.map(conducta_map).fillna(1).astype(int)
 
     # 3. Normalizar asistencia e inasistencia a escala 0-1
     df_features['asistencia_normalizada'] = df_features['asistencia'] / 100.0
@@ -64,13 +84,13 @@ def prepare_features_real(df: pd.DataFrame) -> pd.DataFrame:
     # 4. Crear indicadores de riesgo (igual que en entrenamiento)
     df_features['nota_baja'] = (df_features['nota_final'] < 11).astype(int)
     df_features['alta_inasistencia'] = (df_features['inasistencia'] > 30).astype(int)
-    df_features['conducta_problematica'] = (df_features['conducta'] == 'agresivo').astype(int)
+    df_features['conducta_problematica'] = conducta_clean.isin(['agresivo', 'mala', 'malo', 'deficiente']).astype(int)
 
     # 5. Seleccionar solo las características que usa el modelo
-    feature_columns = config['feature_columns']
+    feature_columns = cfg['feature_columns']
     X = df_features[feature_columns]
 
-    logger.info(f"✅ Características preparadas: {feature_columns}")
+    logger.info(f"Caracteristicas preparadas: {feature_columns}")
 
     return X
 
@@ -88,20 +108,20 @@ def predict_desertion(file_path: str) -> List[Dict]:
     Realiza predicciones de deserción usando el modelo ajustado a datos reales
 
     Args:
-        file_path: Ruta al archivo CSV con la estructura real del sistema
+        file_path: Ruta al archivo CSV o Excel con la estructura real del sistema
 
     Returns:
         Lista de diccionarios con predicciones
     """
     try:
-        # Cargar datos
-        if file_path.endswith(".xlsx"):
+        # Cargar datos soportando CSV, XLSX y XLS
+        if file_path.lower().endswith((".xlsx", ".xls")):
             df = pd.read_excel(file_path)
         else:
             df = pd.read_csv(file_path)
 
-        logger.info(f"📂 Datos cargados: {len(df)} filas")
-        logger.info(f"📋 Columnas encontradas: {df.columns.tolist()}")
+        logger.info(f"Datos cargados: {len(df)} filas")
+        logger.info(f"Columnas encontradas: {df.columns.tolist()}")
 
         # Limpiar nombres de columnas
         df.columns = df.columns.str.strip().str.lower()
@@ -109,15 +129,29 @@ def predict_desertion(file_path: str) -> List[Dict]:
         # Mapear nombres de columnas si es necesario para mantener consistencia
         column_mapping = {
             'estudiante_id': 'estudiante_id',
-            'id_estudiante': 'estudiante_id',  # Por si viene con nombre alternativo
-            'id': 'estudiante_id',  # Otro posible nombre
+            'id_estudiante': 'estudiante_id',
+            'id': 'estudiante_id',
         }
+        if 'nota_final' not in df.columns:
+            if 'calificacion' in df.columns:
+                column_mapping['calificacion'] = 'nota_final'
+            elif 'nota' in df.columns:
+                column_mapping['nota'] = 'nota_final'
 
         df = df.rename(columns=column_mapping)
 
+        if 'inasistencia' not in df.columns and 'asistencia' in df.columns:
+            df['inasistencia'] = (
+                100.0 - pd.to_numeric(df['asistencia'], errors='coerce').fillna(0.0)
+            ).clip(lower=0.0, upper=100.0)
+        elif 'asistencia' not in df.columns and 'inasistencia' in df.columns:
+            df['asistencia'] = (
+                100.0 - pd.to_numeric(df['inasistencia'], errors='coerce').fillna(0.0)
+            ).clip(lower=0.0, upper=100.0)
+
         # Imprimir las columnas después de la normalización para debug
-        logger.info(f"📋 Columnas después de normalización: {df.columns.tolist()}")
-        logger.info(f"📊 Primeras filas de datos:")
+        logger.info(f"Columnas despues de normalizacion: {df.columns.tolist()}")
+        logger.info("Primeras filas de datos:")
         for col in ['estudiante_id', 'nombre', 'nota_final', 'asistencia', 'conducta']:
             if col in df.columns:
                 logger.info(f"  {col}: {df[col].head(3).tolist()}")
@@ -127,7 +161,7 @@ def predict_desertion(file_path: str) -> List[Dict]:
             raise ValueError("La estructura de datos no coincide con la esperada por el modelo")
 
         # Preparar características para el modelo
-        X = prepare_features_real(df)
+        X = prepare_features_real(df, config)
 
         # Aplicar escalado
         X_scaled = scaler.transform(X)
@@ -146,21 +180,23 @@ def predict_desertion(file_path: str) -> List[Dict]:
         session = SessionLocal()
         resultados = []
 
-        logger.info(f"💾 Procesando {len(df)} registros con modelo ajustado...")
+        logger.info(f"Procesando {len(df)} registros con modelo ajustado...")
 
         # Limpiar registros anteriores para evitar duplicados
         try:
             session.query(ResultadoPrediccion).delete()
             session.commit()
-            logger.info("🗑️ Registros anteriores eliminados")
+            logger.info("Registros anteriores eliminados")
         except Exception as e:
-            logger.warning(f"⚠️ Error limpiando registros anteriores: {e}")
+            logger.warning(f"Error limpiando registros anteriores: {e}")
             session.rollback()
 
-        for idx, row in df.iterrows():
-            # Obtener predicciones
-            prediccion = int(y_pred[idx])
-            probabilidad = float(y_pred_proba[idx])
+        for pos_idx, (_, row) in enumerate(df.iterrows()):
+            # Obtener predicciones de forma segura por posicion
+            prediccion = int(y_pred[pos_idx])
+            probabilidad = float(y_pred_proba[pos_idx])
+            if np.isnan(probabilidad):
+                probabilidad = 0.0
             riesgo = classify_risk_level(probabilidad)
 
             # Procesar fecha correctamente del CSV
@@ -179,21 +215,25 @@ def predict_desertion(file_path: str) -> List[Dict]:
                             if año < 100:
                                 año = 2000 + año if año < 50 else 1900 + año
                             fecha_obj = date(año, mes, dia)
-                            logger.info(f"📅 Fecha procesada: {fecha_original} → {fecha_obj}")
+                            logger.info(f"Fecha procesada: {fecha_original} -> {fecha_obj}")
                     elif '-' in fecha_original:
                         # Formato YYYY-MM-DD
-                        fecha_obj = datetime.strptime(fecha_original, '%Y-%m-%d').date()
+                        fecha_obj = datetime.strptime(fecha_original[:10], '%Y-%m-%d').date()
                 except Exception as e:
-                    logger.warning(f"⚠️  Error procesando fecha {row.get('fecha')}: {e}")
+                    logger.warning(f"Error procesando fecha {row.get('fecha')}: {e}")
 
             # Generar ID del estudiante si no existe en el CSV
-            if 'estudiante_id' in row.index and pd.notna(row['estudiante_id']):
-                estudiante_id = int(row['estudiante_id'])
+            raw_id = row.get('estudiante_id')
+            if pd.notna(raw_id):
+                try:
+                    estudiante_id = int(float(raw_id))
+                except (ValueError, TypeError):
+                    estudiante_id = pos_idx + 1
             else:
-                estudiante_id = idx + 1  # Generar ID automáticamente
+                estudiante_id = pos_idx + 1  # Generar ID automáticamente
 
             # Generar nombre del estudiante si no existe en el CSV
-            if 'nombre' in row.index and pd.notna(row['nombre']) and str(row['nombre']).strip():
+            if 'nombre' in row.index and pd.notna(row['nombre']) and str(row['nombre']).strip() and str(row['nombre']).strip().lower() != 'nan':
                 nombre = str(row['nombre']).strip()
             else:
                 # Lista de nombres realistas para generar automáticamente
@@ -218,15 +258,29 @@ def predict_desertion(file_path: str) -> List[Dict]:
                 else:
                     nombre = nombres_masculinos[(estudiante_id - 1) % len(nombres_masculinos)]
 
-            # Obtener los valores reales del CSV con logging para debug
-            nota_final_value = float(row.get('nota_final', 0))
-            asistencia_value = float(row.get('asistencia', 0))
-            inasistencia_value = float(row.get('inasistencia', 0))
-            conducta_value = str(row.get('conducta', 'Regular'))
+            # Obtener los valores reales del CSV evitando NaN o "nan"
+            raw_nota = pd.to_numeric(row.get('nota_final'), errors='coerce')
+            nota_final_value = float(0.0 if pd.isna(raw_nota) else raw_nota)
+
+            raw_inasistencia = pd.to_numeric(row.get('inasistencia'), errors='coerce')
+            inasistencia_value = float(0.0 if pd.isna(raw_inasistencia) else raw_inasistencia)
+
+            raw_asistencia = pd.to_numeric(row.get('asistencia'), errors='coerce')
+            asistencia_value = float(
+                max(0.0, min(100.0, 100.0 - inasistencia_value))
+                if pd.isna(raw_asistencia)
+                else raw_asistencia
+            )
+
+            raw_conducta = row.get('conducta')
+            if pd.isna(raw_conducta) or not str(raw_conducta).strip() or str(raw_conducta).strip().lower() == 'nan':
+                conducta_value = 'neutral'
+            else:
+                conducta_value = str(raw_conducta).strip()
 
             # Log para debug - verificar que los valores se están leyendo correctamente
-            if idx < 3:  # Solo para las primeras 3 filas
-                logger.info(f"📊 Fila {idx}: nota_final={nota_final_value}, asistencia={asistencia_value}")
+            if pos_idx < 3:  # Solo para las primeras 3 filas
+                logger.info(f"Fila {pos_idx}: nota_final={nota_final_value}, asistencia={asistencia_value}")
 
             # Guardar en la base de datos
             resultado_bd = ResultadoPrediccion(
@@ -265,9 +319,9 @@ def predict_desertion(file_path: str) -> List[Dict]:
         # Commit todos los registros de una vez
         try:
             session.commit()
-            logger.info(f"✅ {len(resultados)} registros guardados en la base de datos")
+            logger.info(f"{len(resultados)} registros guardados en la base de datos")
         except Exception as e:
-            logger.error(f"❌ Error guardando en BD: {e}")
+            logger.error(f"Error guardando en BD: {e}")
             session.rollback()
         finally:
             session.close()
@@ -277,17 +331,21 @@ def predict_desertion(file_path: str) -> List[Dict]:
         medio_riesgo = sum(1 for r in resultados if r['riesgo_desercion'] == 'Medio')
         bajo_riesgo = sum(1 for r in resultados if r['riesgo_desercion'] == 'Bajo')
 
-        logger.info(f"✅ Predicciones completadas en {tiempo_prediccion:.4f}s")
-        logger.info(f"📊 Distribución: Alto={alto_riesgo}, Medio={medio_riesgo}, Bajo={bajo_riesgo}")
+        logger.info(f"Predicciones completadas en {tiempo_prediccion:.4f}s")
+        logger.info(f"Distribucion: Alto={alto_riesgo}, Medio={medio_riesgo}, Bajo={bajo_riesgo}")
 
         return resultados
 
     except Exception as e:
-        logger.error(f"❌ Error en predicción: {str(e)}")
+        logger.error(f"Error en prediccion: {str(e)}")
         raise Exception(f"Error al procesar las predicciones: {str(e)}")
 
 # Mapeo de compatibilidad con el código existente
-CONDUCTA_MAP = {"positivo": 0, "neutral": 1, "agresivo": 2}
+CONDUCTA_MAP = {
+    "positivo": 0, "buena": 0, "bueno": 0,
+    "neutral": 1, "regular": 1,
+    "agresivo": 2, "mala": 2, "malo": 2, "deficiente": 2
+}
 
 def encode_conducta(valor: str) -> int:
     """Función de compatibilidad para codificar conducta"""

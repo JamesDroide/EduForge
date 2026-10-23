@@ -17,7 +17,7 @@ def clear_latest_csv_data():
     """Limpia la variable global de datos del CSV"""
     global latest_csv_data
     latest_csv_data = None
-    print("🧹 Variable global latest_csv_data limpiada")
+    print(" Variable global latest_csv_data limpiada")
 
 class AttendanceService:
 
@@ -27,9 +27,9 @@ class AttendanceService:
         """
         global latest_csv_data
 
-        # ✅ CORRECCIÓN: Solo usar la variable global, NO leer de BD
+        #  CORRECCIÓN: Solo usar la variable global, NO leer de BD
         if not latest_csv_data or len(latest_csv_data) == 0:
-            print("📭 No hay datos de asistencia cargados en esta sesión")
+            print(" No hay datos de asistencia cargados en esta sesión")
             return None
 
         # Convertir a DataFrame para procesamiento
@@ -62,9 +62,9 @@ class AttendanceService:
         """
         global latest_csv_data
 
-        # ✅ CORRECCIÓN: Si no hay datos en la variable global, devolver vacío
+        #  CORRECCIÓN: Si no hay datos en la variable global, devolver vacío
         if not latest_csv_data or len(latest_csv_data) == 0:
-            print("📭 No hay datos de asistencia cargados en esta sesión")
+            print(" No hay datos de asistencia cargados en esta sesión")
             return {"labels": ["L", "M", "M", "J", "V", "S", "D"], "data": [0, 0, 0, 0, 0, 0, 0]}
 
         db = SessionLocal()
@@ -86,6 +86,8 @@ class AttendanceService:
                 return {"labels": ["L", "M", "M", "J", "V", "S", "D"], "data": [0, 0, 0, 0, 0, 0, 0]}
 
             # Obtener el día de la semana de cada fecha (0=Monday, 6=Sunday)
+            df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
+            df = df.dropna(subset=["fecha"])
             df["day_of_week"] = df["fecha"].dt.dayofweek
 
             # Calcular la suma de asistencia por día de la semana

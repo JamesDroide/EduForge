@@ -15,7 +15,7 @@ from config import Base, engine
 
 def migrate_upload_history_tables():
     """Crear las tablas de historial de cargas"""
-    print("🔄 Iniciando migración de tablas de historial...")
+    print(" Iniciando migración de tablas de historial...")
 
     try:
         # Crear las tablas
@@ -24,7 +24,7 @@ def migrate_upload_history_tables():
             UploadPrediction.__table__
         ])
 
-        print("✅ Tablas de historial creadas exitosamente:")
+        print(" Tablas de historial creadas exitosamente:")
         print("   - upload_history")
         print("   - upload_predictions")
 
@@ -38,21 +38,21 @@ def migrate_upload_history_tables():
         """))
 
         tables = [row[0] for row in result]
-        print(f"\n✅ Tablas verificadas: {tables}")
+        print(f"\n Tablas verificadas: {tables}")
 
         db.close()
 
         return True
 
     except Exception as e:
-        print(f"❌ Error en la migración: {str(e)}")
+        print(f" Error en la migración: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
 
 def add_user_name_fields():
     """Agregar campos nombre y apellido a la tabla usuarios si no existen"""
-    print("\n🔄 Agregando campos nombre y apellido a usuarios...")
+    print("\n Agregando campos nombre y apellido a usuarios...")
 
     db = SessionLocal()
     try:
@@ -68,21 +68,21 @@ def add_user_name_fields():
 
         if 'nombre' not in existing_columns:
             db.execute(text("ALTER TABLE usuarios ADD COLUMN nombre VARCHAR(100)"))
-            print("✅ Campo 'nombre' agregado")
+            print(" Campo 'nombre' agregado")
         else:
-            print("ℹ️  Campo 'nombre' ya existe")
+            print("  Campo 'nombre' ya existe")
 
         if 'apellido' not in existing_columns:
             db.execute(text("ALTER TABLE usuarios ADD COLUMN apellido VARCHAR(100)"))
-            print("✅ Campo 'apellido' agregado")
+            print(" Campo 'apellido' agregado")
         else:
-            print("ℹ️  Campo 'apellido' ya existe")
+            print("  Campo 'apellido' ya existe")
 
         db.commit()
         return True
 
     except Exception as e:
-        print(f"❌ Error agregando campos: {str(e)}")
+        print(f" Error agregando campos: {str(e)}")
         import traceback
         traceback.print_exc()
         db.rollback()
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     if success1 and success2:
         print("\n" + "=" * 60)
-        print("✅ ¡MIGRACIÓN COMPLETADA EXITOSAMENTE!")
+        print(" ¡MIGRACIÓN COMPLETADA EXITOSAMENTE!")
         print("=" * 60)
         print("\nAhora puedes:")
         print("1. Reiniciar el servidor backend")
@@ -109,6 +109,6 @@ if __name__ == "__main__":
         print("3. Acceder a /historial en el frontend para ver el historial")
     else:
         print("\n" + "=" * 60)
-        print("⚠️  MIGRACIÓN COMPLETADA CON ERRORES")
+        print("  MIGRACIÓN COMPLETADA CON ERRORES")
         print("=" * 60)
         print("Revisa los mensajes de error anteriores")

@@ -7,7 +7,7 @@ import os
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
-load_dotenv()
+load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env")))
 
 # Configuración de seguridad
 SECRET_KEY = os.getenv("SECRET_KEY", "eduforge_super_secret_key_change_in_production_2024")

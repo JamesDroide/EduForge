@@ -97,6 +97,12 @@ function UserManagement() {
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_user");
+          navigate("/admin-panel/login");
+          return;
+        }
         throw new Error("Error al cargar los usuarios");
       }
 
@@ -107,7 +113,7 @@ function UserManagement() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [navigate]);
 
   // Cargar usuarios al montar el componente
   useEffect(() => {
@@ -192,6 +198,12 @@ function UserManagement() {
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_user");
+          navigate("/admin-panel/login");
+          return;
+        }
         const errorData = await response.json();
         throw new Error(errorData.detail || "Error al guardar el usuario");
       }
@@ -252,6 +264,12 @@ function UserManagement() {
       );
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_user");
+          navigate("/admin-panel/login");
+          return;
+        }
         const errorData = await response.json();
         throw new Error(errorData.detail || "Error al cambiar la contraseña");
       }
@@ -289,6 +307,12 @@ function UserManagement() {
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_user");
+          navigate("/admin-panel/login");
+          return;
+        }
         throw new Error("Error al cambiar el estado del usuario");
       }
 
@@ -320,6 +344,12 @@ function UserManagement() {
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem("admin_token");
+          localStorage.removeItem("admin_user");
+          navigate("/admin-panel/login");
+          return;
+        }
         throw new Error("Error al eliminar el usuario");
       }
 

@@ -46,7 +46,7 @@ def create_admin_user():
         ).first()
 
         if admin_exists:
-            print("✅ Ya existe un usuario administrador")
+            print(" Ya existe un usuario administrador")
             print(f"   Username: {admin_exists.username}")
             return
 
@@ -63,15 +63,15 @@ def create_admin_user():
         db.commit()
         db.refresh(admin_user)
 
-        print("✅ Usuario administrador creado exitosamente")
+        print(" Usuario administrador creado exitosamente")
         print(f"   Email: {admin_user.email}")
         print(f"   Username: {admin_user.username}")
-        print("   ⚠️  IMPORTANTE: Cambia la contraseña después del primer login")
+        print("     IMPORTANTE: Cambia la contraseña después del primer login")
         print("\n   NOTA: Este usuario es diferente del superadmin del panel de gestión")
 
     except Exception as e:
         db.rollback()
-        print(f"❌ Error al crear usuario administrador: {e}")
+        print(f" Error al crear usuario administrador: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

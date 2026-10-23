@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { API_ENDPOINTS } from "../config/api";
 
 // Cache global para datos de estudiantes
@@ -6,11 +6,12 @@ class StudentsCache {
   constructor() {
     this.cache = new Map();
     this.lastFetch = null;
-    this.CACHE_DURATION = 60 * 1000; // Aumentar a 60 segundos
-    this.loading = false; // Evitar múltiples peticiones simultáneas
+    this.CACHE_DURATION = 60 * 1000;
+    this.loading = false;
+    this.pendingPromise = null;
   }
 
-  // Verificar si el cache es válido
+  // Verificar si el cache es valido
   isValid() {
     return this.lastFetch && Date.now() - this.lastFetch < this.CACHE_DURATION;
   }
@@ -18,45 +19,41 @@ class StudentsCache {
   // Obtener datos del cache o hacer fetch si es necesario
   async getStudents(forceRefresh = false) {
     if (!forceRefresh && this.isValid() && this.cache.has("students")) {
-      console.log("📦 Usando datos del cache - RÁPIDO");
       return this.cache.get("students");
     }
 
-    // Evitar múltiples peticiones simultáneas
-    if (this.loading) {
-      console.log("⏳ Esperando petición en curso...");
-      return this.cache.get("students") || [];
+    if (!forceRefresh && this.pendingPromise) {
+      return await this.pendingPromise;
     }
 
-    console.log("🔄 Cargando datos del servidor...");
     this.loading = true;
+    this.pendingPromise = (async () => {
+      try {
+        const response = await fetch(API_ENDPOINTS.STUDENTS_AT_RISK, {
+          timeout: 10000,
+        });
 
-    try {
-      const response = await fetch(API_ENDPOINTS.STUDENTS_AT_RISK, {
-        timeout: 10000, // 10 segundos de timeout
-      });
+        if (!response.ok) {
+          throw new Error("No se pudieron cargar los estudiantes");
+        }
 
-      if (!response.ok) {
-        throw new Error("No se pudieron cargar los estudiantes");
+        const data = await response.json();
+        const processedData = this.processStudentData(data);
+
+        this.cache.set("students", processedData);
+        this.lastFetch = Date.now();
+
+        return processedData;
+      } catch (error) {
+        console.error("Error cargando estudiantes:", error);
+        return this.cache.get("students") || [];
+      } finally {
+        this.loading = false;
+        this.pendingPromise = null;
       }
+    })();
 
-      const data = await response.json();
-
-      // Procesar los datos una sola vez
-      const processedData = this.processStudentData(data);
-
-      // Guardar en cache
-      this.cache.set("students", processedData);
-      this.lastFetch = Date.now();
-
-      console.log(`✅ ${processedData.length} estudiantes cargados y guardados en cache`);
-      return processedData;
-    } catch (error) {
-      console.error("❌ Error cargando estudiantes:", error);
-      return this.cache.get("students") || [];
-    } finally {
-      this.loading = false;
-    }
+    return await this.pendingPromise;
   }
 
   // Procesar datos una sola vez
@@ -88,6 +85,8 @@ class StudentsCache {
           nota: parseFloat(fullData.nota_final || fullData.nota || student.nota || 0),
           asistencia: parseFloat(fullData.asistencia || student.asistencia || 0),
           risk_level: student.risk_level || fullData.riesgo_desercion || "Bajo",
+          riesgo_desercion:
+            student.riesgo_desercion || student.risk_level || fullData.riesgo_desercion || "Bajo",
           conducta: fullData.conducta || student.conducta || "Regular",
           ...student,
           ...fullData,
@@ -104,7 +103,7 @@ class StudentsCache {
     this.cache.clear();
     this.lastFetch = null;
     this.loading = false;
-    console.log("🗑️ Cache invalidado - próxima carga será fresca");
+    this.pendingPromise = null;
   }
 }
 
@@ -117,7 +116,7 @@ export const useStudentsCache = () => {
   const [loading, setLoading] = useState(false);
   const [hasValidData, setHasValidData] = useState(false);
 
-  const fetchStudents = async (forceRefresh = false) => {
+  const fetchStudents = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     try {
       const data = await studentsCache.getStudents(forceRefresh);
@@ -130,23 +129,24 @@ export const useStudentsCache = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const refresh = useCallback(() => {
+    studentsCache.invalidate();
+    fetchStudents(true);
+  }, [fetchStudents]);
 
   useEffect(() => {
     fetchStudents();
 
-    // Escuchar cambios en localStorage
     const handleStorageChange = (e) => {
-      if (e.key === "latest_predictions" || e.key === "csv_uploaded") {
-        console.log("🔄 Detectado cambio en localStorage, invalidando caché...");
+      if (e.key === "latest_predictions" || (e.key === "csv_uploaded" && e.newValue)) {
         studentsCache.invalidate();
         fetchStudents(true);
       }
     };
 
-    // Escuchar eventos personalizados para invalidación inmediata
     const handleCsvUploaded = () => {
-      console.log("🆕 Nuevo CSV detectado, actualizando datos...");
       studentsCache.invalidate();
       fetchStudents(true);
     };
@@ -158,17 +158,13 @@ export const useStudentsCache = () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("csvUploaded", handleCsvUploaded);
     };
-  }, []); // Sin dependencias ya que fetchStudents se define dentro del componente
+  }, [fetchStudents]);
 
   return {
     students,
     loading,
     hasValidData,
-    refresh: () => {
-      console.log("🔄 Refresh manual solicitado");
-      studentsCache.invalidate();
-      fetchStudents(true);
-    },
+    refresh,
   };
 };
 

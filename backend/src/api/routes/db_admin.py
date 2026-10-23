@@ -8,12 +8,13 @@ from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 import sys
 import os
+import re
 
 # Agregar el directorio src al path para las importaciones
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from config import engine, SessionLocal
-from utils.dependencies import get_current_user
+from utils.dependencies import require_admin
 from models.user import Usuario
 
 router = APIRouter(prefix="/db-admin", tags=["Administración de Base de Datos"])
@@ -31,7 +32,7 @@ class QueryResponse(BaseModel):
 
 
 @router.get("/tables", response_model=List[str])
-async def list_tables(current_user: Usuario = Depends(get_current_user)):
+async def list_tables(current_user: Usuario = Depends(require_admin)):
     """
     Lista todas las tablas disponibles en la base de datos
     Requiere autenticación
@@ -45,7 +46,7 @@ async def list_tables(current_user: Usuario = Depends(get_current_user)):
 
 
 @router.get("/table/{table_name}/schema")
-async def get_table_schema(table_name: str, current_user: Usuario = Depends(get_current_user)):
+async def get_table_schema(table_name: str, current_user: Usuario = Depends(require_admin)):
     """
     Obtiene el esquema de una tabla específica (columnas y tipos de datos)
     """
@@ -81,7 +82,7 @@ async def get_table_data(
     table_name: str,
     limit: int = Query(default=100, le=1000),
     offset: int = Query(default=0, ge=0),
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(require_admin)
 ):
     """
     Obtiene los datos de una tabla con paginación
@@ -123,7 +124,7 @@ async def get_table_data(
 @router.post("/query", response_model=QueryResponse)
 async def execute_query(
     query_request: QueryRequest,
-    current_user: Usuario = Depends(get_current_user)
+    current_user: Usuario = Depends(require_admin)
 ):
     """
     Ejecuta una consulta SQL de solo lectura (SELECT)
@@ -140,7 +141,7 @@ async def execute_query(
 
     # Validar que no contenga comandos peligrosos
     dangerous_keywords = ["DROP", "DELETE", "UPDATE", "INSERT", "ALTER", "CREATE", "TRUNCATE", "GRANT", "REVOKE"]
-    if any(keyword in query for keyword in dangerous_keywords):
+    if any(re.search(rf'\b{keyword}\b', query) for keyword in dangerous_keywords):
         raise HTTPException(
             status_code=400,
             detail="La consulta contiene comandos no permitidos"
@@ -168,7 +169,7 @@ async def execute_query(
 
 
 @router.get("/stats")
-async def get_database_stats(current_user: Usuario = Depends(get_current_user)):
+async def get_database_stats(current_user: Usuario = Depends(require_admin)):
     """
     Obtiene estadísticas generales de la base de datos
     """
@@ -196,7 +197,7 @@ async def get_database_stats(current_user: Usuario = Depends(get_current_user)):
 
 
 @router.get("/connection-info")
-async def get_connection_info(current_user: Usuario = Depends(get_current_user)):
+async def get_connection_info(current_user: Usuario = Depends(require_admin)):
     """
     Obtiene información sobre la conexión a la base de datos
     """

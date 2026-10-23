@@ -1,7 +1,10 @@
 # =============================================================================
 # EduForge - Global Monorepo .gitignore
-# (Reglas específicas en backend/.gitignore y frontend/.gitignore)
+# (Reglas especificas en backend/.gitignore y frontend/.gitignore)
 # =============================================================================
+
+# Arquitectura y Memoria de IA
+.agents/
 
 # Environments & Secrets
 .env

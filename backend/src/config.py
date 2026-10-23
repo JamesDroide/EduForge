@@ -20,14 +20,14 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:jamesdroide@loca
 if DATABASE_URL:
     # Ocultar password para logging seguro
     safe_url = DATABASE_URL.split('@')[0].split(':')[0] + ':****@' + DATABASE_URL.split('@')[1] if '@' in DATABASE_URL else DATABASE_URL
-    logger.info(f"🔗 DATABASE_URL configurada: {safe_url}")
+    logger.info(f" DATABASE_URL configurada: {safe_url}")
 else:
-    logger.warning("⚠️ DATABASE_URL no configurada, usando default local")
+    logger.warning(" DATABASE_URL no configurada, usando default local")
 
 # Detectar si estamos en Railway
 IS_RAILWAY = 'rlwy.net' in DATABASE_URL or 'railway' in DATABASE_URL.lower()
 if IS_RAILWAY:
-    logger.info("🚂 Railway detectado - Aplicando configuraciones especiales")
+    logger.info(" Railway detectado - Aplicando configuraciones especiales")
 
 # Crear el engine de SQLAlchemy para conectar con PostgreSQL
 # Con configuraciones robustas para producción
@@ -52,14 +52,14 @@ SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=True if IS_RAILWAY else False,  # Autoflush en Railway
     bind=engine,
-    expire_on_commit=False  # ← CRÍTICO: Mantiene objetos accesibles después del commit
+    expire_on_commit=False  #  CRÍTICO: Mantiene objetos accesibles después del commit
 )
 
 # Event listener para Railway: Forzar commit después de cada flush
 if IS_RAILWAY:
     @event.listens_for(SessionLocal, "after_flush")
     def receive_after_flush(session, flush_context):
-        logger.debug("🔵 After flush - forzando persist en Railway")
+        logger.debug(" After flush - forzando persist en Railway")
 
 # Declarar la base para los modelos
 Base = declarative_base()
@@ -70,7 +70,7 @@ def check_db_connection():
         # Establecer una conexión y ejecutar la consulta correctamente
         with engine.connect() as connection:
             result = connection.execute(text("SELECT 1"))
-            logger.info("✅ Conexión a la base de datos exitosa!")
+            logger.info(" Conexión a la base de datos exitosa!")
             logger.info(f"   Database: {engine.url.database}")
             logger.info(f"   Host: {engine.url.host}")
             logger.info(f"   Port: {engine.url.port}")
@@ -81,7 +81,7 @@ def check_db_connection():
             logger.info(f"   PostgreSQL: {pg_version[:50]}...")
 
     except OperationalError as e:
-        logger.error(f"❌ Error al conectarse a la base de datos: {e}")
+        logger.error(f" Error al conectarse a la base de datos: {e}")
 
 # Llamamos a esta función para verificar la conexión
 check_db_connection()

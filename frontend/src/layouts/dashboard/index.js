@@ -231,14 +231,11 @@ function Dashboard() {
     loadAttendanceData();
     loadRiskData();
 
-    // Función para escuchar cambios de datos (cuando se sube un nuevo CSV)
+    // Funcion para escuchar cambios de datos (cuando se sube un nuevo CSV)
     const handleStorageChange = (e) => {
-      if (e.key === "csv_uploaded") {
-        console.log("🔄 Nuevo CSV detectado, actualizando gráficos...");
+      if (e.key === "csv_uploaded" && e.newValue) {
         loadAttendanceData();
         loadRiskData();
-        // Limpiar el flag después de actualizar
-        localStorage.removeItem("csv_uploaded");
       }
     };
 
@@ -289,10 +286,9 @@ function Dashboard() {
           </MDBox>
         )}
 
-        <Grid container spacing={3}></Grid>
         <MDBox mt={4.5}>
           <Grid container spacing={3}>
-            <Grid item xs={18} md={10} lg={8}>
+            <Grid item xs={12} md={6} lg={6}>
               <MDBox mb={3}>
                 <ReportsBarChart
                   color="info"
@@ -303,7 +299,7 @@ function Dashboard() {
                 />
               </MDBox>
             </Grid>
-            <Grid item xs={12} md={6} lg={4}>
+            <Grid item xs={12} md={6} lg={6}>
               <MDBox mb={3}>
                 <ReportsLineChart
                   color="success"
@@ -317,9 +313,6 @@ function Dashboard() {
                   chart={lineChartData}
                 />
               </MDBox>
-            </Grid>
-            <Grid item xs={12} md={6} lg={4}>
-              <MDBox mb={3}></MDBox>
             </Grid>
           </Grid>
         </MDBox>

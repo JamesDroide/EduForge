@@ -12,6 +12,8 @@ class UserBase(BaseModel):
     """Schema base para usuario"""
     email: EmailStr
     username: str = Field(..., min_length=3, max_length=50)
+    nombre: Optional[str] = None
+    apellido: Optional[str] = None
     rol: RolEnum = RolEnum.DOCENTE
 
 class UserCreate(UserBase):

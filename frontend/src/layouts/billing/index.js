@@ -55,9 +55,11 @@ function Billing() {
   // Usar cache optimizado en lugar de fetch individual
   const { students: allPredictions, loading, hasValidData, refresh } = useStudentsCache();
   const [activeFilter, setActiveFilter] = useState("Todos");
-  const [lastCsvTimestamp, setLastCsvTimestamp] = useState(null);
+  const [lastCsvTimestamp, setLastCsvTimestamp] = useState(() =>
+    localStorage.getItem("csv_upload_timestamp")
+  );
 
-  // Determinar datos desde múltiples fuentes, pero priorizar el estado interno
+  // Determinar datos desde multiples fuentes, pero priorizar el estado interno
   let finalPredictions = allPredictions;
 
   // Si hay datos desde URL o state, usar esos primero
@@ -67,33 +69,39 @@ function Billing() {
     finalPredictions = stateData;
   }
 
-  // Detectar cambios en el CSV y forzar actualización
+  // Detectar cambios en el CSV y forzar actualizacion
   useEffect(() => {
     const checkForNewCsv = () => {
       const currentTimestamp = localStorage.getItem("csv_upload_timestamp");
       if (currentTimestamp && currentTimestamp !== lastCsvTimestamp) {
-        console.log("🔄 Nuevo CSV detectado en Resultados Completos, actualizando...");
         setLastCsvTimestamp(currentTimestamp);
-        refresh(); // Forzar actualización del caché
+        refresh();
       }
     };
 
-    // Verificar inmediatamente
     checkForNewCsv();
 
-    // Escuchar eventos de nuevo CSV
-    const handleCsvUploaded = (event) => {
-      console.log("📄 Evento CSV detectado en Resultados Completos");
+    const handleStorageChange = (e) => {
+      if (
+        (e.key === "csv_uploaded" && e.newValue) ||
+        e.key === "csv_upload_timestamp" ||
+        e.key === "latest_predictions"
+      ) {
+        checkForNewCsv();
+        refresh();
+      }
+    };
+
+    const handleCsvUploaded = () => {
+      checkForNewCsv();
       refresh();
     };
 
-    // Verificar cada 1 segundo para detectar cambios rápidamente
-    const intervalId = setInterval(checkForNewCsv, 1000);
-
+    window.addEventListener("storage", handleStorageChange);
     window.addEventListener("csvUploaded", handleCsvUploaded);
 
     return () => {
-      clearInterval(intervalId);
+      window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener("csvUploaded", handleCsvUploaded);
     };
   }, [lastCsvTimestamp, refresh]);

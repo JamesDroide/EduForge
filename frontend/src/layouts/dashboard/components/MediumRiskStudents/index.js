@@ -84,12 +84,10 @@ function MediumRiskStudents() {
       }, 1000);
     };
 
-    // Función para escuchar cambios en localStorage
+    // Funcion para escuchar cambios en localStorage
     const handleStorageChange = (e) => {
-      if (e.key === "csv_uploaded") {
-        console.log("🔄 Nuevo CSV detectado, actualizando estudiantes riesgo medio...");
+      if (e.key === "csv_uploaded" && e.newValue) {
         fetchStudentsAtRisk();
-        localStorage.removeItem("csv_uploaded");
       }
     };
 

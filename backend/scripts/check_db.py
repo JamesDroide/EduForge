@@ -30,12 +30,12 @@ try:
         host = conn.execute(text("SELECT inet_server_addr()")).scalar()
         port = conn.execute(text("SELECT inet_server_port()")).scalar()
 
-        print(f"   ✅ Conectado a: {db_name}")
+        print(f"    Conectado a: {db_name}")
         print(f"   Usuario: {user_name}")
         print(f"   Host: {host}")
         print(f"   Puerto: {port}")
 except Exception as e:
-    print(f"   ❌ Error: {e}")
+    print(f"    Error: {e}")
     sys.exit(1)
 
 # 3. Listar todas las tablas
@@ -47,14 +47,14 @@ try:
         for table in tables:
             print(f"   - {table}")
     else:
-        print("   ⚠️  No hay tablas")
+        print("     No hay tablas")
 except Exception as e:
-    print(f"   ❌ Error: {e}")
+    print(f"    Error: {e}")
 
 # 4. Verificar tabla usuarios
 print("\n4. Verificando tabla 'usuarios':")
 if 'usuarios' in tables:
-    print("   ✅ Tabla existe")
+    print("    Tabla existe")
 
     # Contar usuarios
     with engine.connect() as conn:
@@ -68,9 +68,9 @@ if 'usuarios' in tables:
             for row in result:
                 print(f"   - ID: {row[0]}, Username: {row[1]}, Email: {row[2]}, Rol: {row[3]}")
         else:
-            print("   ⚠️  La tabla está VACÍA")
+            print("     La tabla está VACÍA")
 else:
-    print("   ❌ La tabla NO existe")
+    print("    La tabla NO existe")
 
 # 5. Verificar otras tablas importantes
 print("\n5. Verificando otras tablas:")
@@ -94,7 +94,7 @@ for var in env_vars:
         else:
             print(f"   {var}: {value}")
     else:
-        print(f"   {var}: ⚠️  NO CONFIGURADA")
+        print(f"   {var}:   NO CONFIGURADA")
 
 print("\n" + "=" * 80)
 print("FIN DEL DIAGNÓSTICO")

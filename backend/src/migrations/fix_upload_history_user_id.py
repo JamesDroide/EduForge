@@ -17,7 +17,7 @@ from config import engine
 
 def migrate():
     """Ejecutar la migración"""
-    print("🔄 Iniciando migración: Modificando columna user_id en upload_history...")
+    print(" Iniciando migración: Modificando columna user_id en upload_history...")
 
     try:
         with engine.connect() as connection:
@@ -26,21 +26,21 @@ def migrate():
 
             try:
                 # Paso 1: Eliminar la restricción de clave foránea existente
-                print("📝 Paso 1: Eliminando restricción de clave foránea antigua...")
+                print(" Paso 1: Eliminando restricción de clave foránea antigua...")
                 connection.execute(text("""
                     ALTER TABLE upload_history 
                     DROP CONSTRAINT IF EXISTS upload_history_user_id_fkey;
                 """))
 
                 # Paso 2: Modificar la columna para permitir NULL
-                print("📝 Paso 2: Modificando columna user_id para permitir NULL...")
+                print(" Paso 2: Modificando columna user_id para permitir NULL...")
                 connection.execute(text("""
                     ALTER TABLE upload_history 
                     ALTER COLUMN user_id DROP NOT NULL;
                 """))
 
                 # Paso 3: Agregar la nueva restricción de clave foránea con ON DELETE SET NULL
-                print("📝 Paso 3: Agregando nueva restricción de clave foránea con ON DELETE SET NULL...")
+                print(" Paso 3: Agregando nueva restricción de clave foránea con ON DELETE SET NULL...")
                 connection.execute(text("""
                     ALTER TABLE upload_history 
                     ADD CONSTRAINT upload_history_user_id_fkey 
@@ -51,17 +51,17 @@ def migrate():
 
                 # Commit de la transacción
                 trans.commit()
-                print("✅ Migración completada exitosamente!")
+                print(" Migración completada exitosamente!")
                 print("   - user_id ahora permite valores NULL")
                 print("   - Al eliminar un usuario, sus registros de historial se mantendrán con user_id=NULL")
 
             except Exception as e:
                 trans.rollback()
-                print(f"❌ Error durante la migración: {e}")
+                print(f" Error durante la migración: {e}")
                 raise
 
     except Exception as e:
-        print(f"❌ Error fatal: {e}")
+        print(f" Error fatal: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

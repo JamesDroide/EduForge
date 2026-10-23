@@ -17,7 +17,7 @@ class UploadHistoryResponse(BaseModel):
     filename: str
     original_filename: str
     upload_date: str
-    user_id: int
+    user_id: Optional[int] = None
     username: Optional[str]
     user_full_name: Optional[str]
     total_students: int
@@ -277,7 +277,7 @@ async def download_original_csv(
 @router.get("/history/{upload_id}/export")
 async def export_predictions(
     upload_id: int,
-    format: str = Query("csv", regex="^(csv|excel)$"),
+    format: str = Query("csv", pattern="^(csv|excel)$"),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):

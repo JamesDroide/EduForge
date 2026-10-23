@@ -99,26 +99,26 @@ def prepare_features(df):
     return df_features[feature_columns], feature_columns
 
 def main():
-    print("🚀 Iniciando entrenamiento del modelo para datos reales...")
+    print(" Iniciando entrenamiento del modelo para datos reales...")
 
     # 1. Crear o cargar datos
-    print("📊 Generando datos sintéticos basados en estructura real...")
+    print(" Generando datos sintéticos basados en estructura real...")
     df = create_synthetic_data()
 
     # 2. Crear variable objetivo
-    print("🎯 Creando variable objetivo...")
+    print(" Creando variable objetivo...")
     y = create_target_variable(df)
 
-    print(f"📈 Distribución de deserción: {np.bincount(y)}")
+    print(f" Distribución de deserción: {np.bincount(y)}")
     print(f"   - No deserción: {np.sum(y == 0)} ({np.mean(y == 0)*100:.1f}%)")
     print(f"   - Deserción: {np.sum(y == 1)} ({np.mean(y == 1)*100:.1f}%)")
 
     # 3. Preparar características
-    print("⚙️  Preparando características...")
+    print("  Preparando características...")
     X, feature_columns = prepare_features(df)
 
-    print(f"✅ Características preparadas: {feature_columns}")
-    print(f"📐 Forma de X: {X.shape}")
+    print(f" Características preparadas: {feature_columns}")
+    print(f" Forma de X: {X.shape}")
 
     # 4. División de datos
     X_train, X_test, y_train, y_test = train_test_split(
@@ -126,13 +126,13 @@ def main():
     )
 
     # 5. Escalado de características
-    print("📏 Aplicando escalado...")
+    print(" Aplicando escalado...")
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
     # 6. Entrenamiento del modelo
-    print("🧠 Entrenando modelo...")
+    print(" Entrenando modelo...")
     model = RandomForestClassifier(
         n_estimators=100,
         max_depth=10,
@@ -145,18 +145,18 @@ def main():
     model.fit(X_train_scaled, y_train)
 
     # 7. Evaluación
-    print("📊 Evaluando modelo...")
+    print(" Evaluando modelo...")
     y_pred = model.predict(X_test_scaled)
     y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
 
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"✅ Precisión: {accuracy:.3f}")
+    print(f" Precisión: {accuracy:.3f}")
 
-    print("\n📈 Reporte de clasificación:")
+    print("\n Reporte de clasificación:")
     print(classification_report(y_test, y_pred))
 
     # 8. Guardar modelo y configuración
-    print("💾 Guardando modelo...")
+    print(" Guardando modelo...")
 
     # Crear directorio si no existe
     model_dir = "trained"
@@ -164,11 +164,11 @@ def main():
 
     # Guardar modelo
     joblib.dump(model, os.path.join(model_dir, "trained_model.pkl"))
-    print(f"✅ Modelo guardado en: {os.path.join(model_dir, 'trained_model.pkl')}")
+    print(f" Modelo guardado en: {os.path.join(model_dir, 'trained_model.pkl')}")
 
     # Guardar scaler
     joblib.dump(scaler, os.path.join(model_dir, "scaler.pkl"))
-    print(f"✅ Scaler guardado en: {os.path.join(model_dir, 'scaler.pkl')}")
+    print(f" Scaler guardado en: {os.path.join(model_dir, 'scaler.pkl')}")
 
     # Guardar configuración
     config = {
@@ -180,10 +180,10 @@ def main():
     }
 
     joblib.dump(config, os.path.join(model_dir, "model_config.pkl"))
-    print(f"✅ Configuración guardada en: {os.path.join(model_dir, 'model_config.pkl')}")
+    print(f" Configuración guardada en: {os.path.join(model_dir, 'model_config.pkl')}")
 
     # 9. Importancia de características
-    print("\n🔍 Importancia de características:")
+    print("\n Importancia de características:")
     feature_importance = pd.DataFrame({
         'feature': feature_columns,
         'importance': model.feature_importances_
@@ -192,8 +192,8 @@ def main():
     for _, row in feature_importance.iterrows():
         print(f"   {row['feature']}: {row['importance']:.3f}")
 
-    print(f"\n🎉 Modelo entrenado exitosamente!")
-    print(f"📁 Archivos guardados en: {os.path.abspath(model_dir)}")
+    print(f"\n Modelo entrenado exitosamente!")
+    print(f" Archivos guardados en: {os.path.abspath(model_dir)}")
 
     return model, scaler, config
 
