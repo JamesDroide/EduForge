@@ -5,6 +5,8 @@ echo "Working directory: $(pwd)"
 
 cd src || exit 1
 
+mkdir -p ../uploads
+
 echo "Verificando conexion a la base de datos..."
 python -c "from config import check_db_connection; check_db_connection()" || {
     echo "Error: No se pudo conectar a la base de datos"
@@ -38,7 +40,13 @@ else:
     exit 1
 }
 
+python migrations/auto_migrate.py
+python migrations/migrate_upload_history.py
+python migrations/fix_upload_history_user_id.py
+python migrations/create_admin.py
+python migrations/create_admin_panel_user.py || true
+
 echo "Base de datos lista"
 echo "Iniciando servidor FastAPI..."
 
-exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+exec python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}

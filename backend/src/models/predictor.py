@@ -23,10 +23,20 @@ try:
     config = joblib.load(CONFIG_PATH)
     logger.info("Modelo ajustado a datos reales cargado exitosamente")
     logger.info(f"Columnas esperadas: {config['expected_columns']}")
-
 except Exception as e:
-    logger.error(f"Error al cargar el modelo: {str(e)}")
-    raise
+    logger.warning(f"No se pudo cargar el modelo preentrenado ({e}). Reentrenando automaticamente...")
+    try:
+        import subprocess
+        import sys
+        trainer_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "models"))
+        subprocess.run([sys.executable, "model_trainer.py"], cwd=trainer_dir, check=True)
+        model = joblib.load(MODEL_PATH)
+        scaler = joblib.load(SCALER_PATH)
+        config = joblib.load(CONFIG_PATH)
+        logger.info("Modelo reentrenado y cargado exitosamente")
+    except Exception as retrain_error:
+        logger.error(f"Error al cargar o reentrenar el modelo: {retrain_error}")
+        raise
 
 def validate_input_data_real(df: pd.DataFrame) -> bool:
     """Valida que el DataFrame tenga las columnas exactas del sistema real"""
