@@ -30,20 +30,35 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ username, password }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || "Error al iniciar sesión");
+      const rawText = await response.text();
+      let payload = null;
+      if (rawText) {
+        try {
+          payload = JSON.parse(rawText);
+        } catch (parseErr) {
+          payload = null;
+        }
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          payload?.detail ||
+            payload?.message ||
+            `Error de comunicación con el servidor (HTTP ${response.status} en ${API_ENDPOINTS.LOGIN})`
+        );
+      }
 
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      if (!payload || !payload.access_token) {
+        throw new Error("Respuesta inválida del servidor de autenticación");
+      }
 
-      setToken(data.access_token);
-      setUser(data.user);
+      localStorage.setItem("token", payload.access_token);
+      localStorage.setItem("user", JSON.stringify(payload.user));
 
-      return { success: true, user: data.user };
+      setToken(payload.access_token);
+      setUser(payload.user);
+
+      return { success: true, user: payload.user };
     } catch (error) {
       console.error("Error en login:", error);
       return { success: false, error: error.message };

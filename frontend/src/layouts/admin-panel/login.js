@@ -41,14 +41,30 @@ function AdminLogin() {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Credenciales inválidas");
+      const rawText = await response.text();
+      let payload = null;
+      if (rawText) {
+        try {
+          payload = JSON.parse(rawText);
+        } catch (parseErr) {
+          payload = null;
+        }
       }
 
-      const data = await response.json();
-      localStorage.setItem("admin_token", data.access_token);
-      localStorage.setItem("admin_user", JSON.stringify(data.user));
+      if (!response.ok) {
+        throw new Error(
+          payload?.detail ||
+            payload?.message ||
+            `Error de comunicación con el servidor (HTTP ${response.status})`
+        );
+      }
+
+      if (!payload || !payload.access_token) {
+        throw new Error("Respuesta inválida del servidor");
+      }
+
+      localStorage.setItem("admin_token", payload.access_token);
+      localStorage.setItem("admin_user", JSON.stringify(payload.user));
 
       navigate("/admin-panel/usuarios");
     } catch (err) {

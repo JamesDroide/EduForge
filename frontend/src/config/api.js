@@ -2,10 +2,15 @@ import axios from "axios";
 
 const getApiUrl = () => {
   if (process.env.REACT_APP_API_URL) {
-    let apiUrl = process.env.REACT_APP_API_URL;
+    let apiUrl = process.env.REACT_APP_API_URL.trim();
 
     if (apiUrl.endsWith("/")) {
       apiUrl = apiUrl.slice(0, -1);
+    }
+
+    // Asegurar protocolo https:// si en Vercel se copio el dominio de Railway sin esquema
+    if (apiUrl && !/^https?:\/\//i.test(apiUrl)) {
+      apiUrl = `https://${apiUrl}`;
     }
 
     console.log(`API URL configurada desde .env: ${apiUrl}`);

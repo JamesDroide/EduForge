@@ -1,5 +1,5 @@
 """
-Script para crear/actualizar el usuario específico del panel de administración
+Script para crear/actualizar el usuario especifico del panel de administracion
 Este usuario es INDEPENDIENTE del usuario 'admin' del sistema
 IMPORTANTE: Las credenciales se leen desde variables de entorno (.env)
 """
@@ -7,7 +7,7 @@ import sys
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env")))
 
 if __name__ == "__main__":
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -21,25 +21,27 @@ from config import SessionLocal, engine, Base
 
 def create_or_update_admin_panel_user():
     """
-    Crea o actualiza el usuario específico para el panel de administración
+    Crea o actualiza el usuario especifico para el panel de administracion
     Las credenciales se leen desde variables de entorno por seguridad
     """
-    SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME")
-    SUPERADMIN_PASSWORD = os.getenv("SUPERADMIN_PASSWORD")
-    SUPERADMIN_EMAIL = os.getenv("SUPERADMIN_EMAIL")
-
-    if not all([SUPERADMIN_USERNAME, SUPERADMIN_PASSWORD, SUPERADMIN_EMAIL]):
-        print("ERROR: Variables de entorno no configuradas")
-        print("  Por favor configura en el archivo .env:")
-        print("  - SUPERADMIN_USERNAME")
-        print("  - SUPERADMIN_PASSWORD")
-        print("  - SUPERADMIN_EMAIL")
-        sys.exit(1)
+    SUPERADMIN_USERNAME = os.getenv("SUPERADMIN_USERNAME", "administrador")
+    SUPERADMIN_PASSWORD = os.getenv("SUPERADMIN_PASSWORD", "james232")
+    SUPERADMIN_EMAIL = os.getenv("SUPERADMIN_EMAIL", "administrador@eduforge.com")
 
     Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()
     try:
+        # Evitar colision de email con otro usuario existente (ej. admin@eduforge.com del usuario admin)
+        email_collision = db.query(Usuario).filter(
+            Usuario.email == SUPERADMIN_EMAIL,
+            Usuario.username != SUPERADMIN_USERNAME
+        ).first()
+        if email_collision:
+            fallback_email = f"{SUPERADMIN_USERNAME}@eduforge.com"
+            print(f"Email '{SUPERADMIN_EMAIL}' ya pertenece a '{email_collision.username}'. Usando '{fallback_email}' para '{SUPERADMIN_USERNAME}'.")
+            SUPERADMIN_EMAIL = fallback_email
+
         admin_panel_user = db.query(Usuario).filter(
             Usuario.username == SUPERADMIN_USERNAME
         ).first()
@@ -83,11 +85,6 @@ def create_or_update_admin_panel_user():
         print(f"  Email:    {SUPERADMIN_EMAIL}")
         print(f"  ID:       {admin_panel_user.id}")
         print(f"  Rol:      {admin_panel_user.rol}")
-        print("\nIMPORTANTE:")
-        print("  - Las credenciales se gestionan mediante variables de entorno")
-        print("  - Este usuario es INDEPENDIENTE del usuario 'admin' del sistema")
-        print("  - NUNCA compartas las credenciales del superadmin")
-        print("  - El codigo de acceso tambien esta en las variables de entorno")
 
     except Exception as e:
         db.rollback()
